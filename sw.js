@@ -1,4 +1,4 @@
-const SHELL = "hanzi-shell-v7";
+const SHELL = "hanzi-shell-v8";
 const DATA = "hanzi-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "lib/hanzi-writer.min.js", "lib/pinyin-pro.js",
   "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];

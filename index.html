@@ -339,6 +339,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     const w = state.words[state.idx];
     $("count").textContent = (state.idx + 1) + " von " + state.words.length;
     stopAudio(); $("audioSrc").innerHTML = "";
+    try { const ent = audioIndex[[...w.zh].filter(isHan).join("")]; if (ent && !ent.none && state.real !== false) cacheGet([...w.zh].filter(isHan).join(""), ent.list[ent.pick % ent.list.length].url).then(u => { if (u) URL.revokeObjectURL(u); }); } catch (e) {}
     $("english").textContent = w.en || "—";
     $("pinyin").textContent = w.py;
     const showPy = !state.test || revealPy, showZh = !state.test || revealZh;
@@ -570,8 +571,22 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     } catch (e) { return null; }   // fall back to streaming the file directly
   }
 
-  let currentAudio = null;
-  function stopAudio() { try { if (currentAudio) { currentAudio.pause(); currentAudio = null; } } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} }
+  // One shared player. iOS only lets audio play right after a tap, so the player is
+  // unlocked synchronously inside the tap; after that it may play once the recording has loaded.
+  const SILENT = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+  const player = new Audio();
+  player.preload = "auto"; player.setAttribute("playsinline", "");
+  let unlocked = false, playToken = 0;
+  function unlockPlayer() {
+    if (unlocked) return;
+    try {
+      player.src = SILENT;
+      const p = player.play();
+      if (p && p.then) p.then(() => { unlocked = true; }).catch(() => {}); else unlocked = true;
+    } catch (e) {}
+  }
+  ["pointerdown", "touchend", "click", "keydown"].forEach(ev => document.addEventListener(ev, unlockPlayer, { capture: true, passive: true }));
+  function stopAudio() { playToken++; try { player.pause(); } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} }
 
   function showSource(word, rec, list) {
     const el = $("audioSrc"); el.innerHTML = "";
@@ -594,7 +609,9 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   async function speak(text) {
     const word = [...text].filter(isHan).join("");
     if (!word) return;
+    unlockPlayer();
     stopAudio();
+    const my = playToken;
     if (state.real === false) { showSource(word, null); speakTTS(word); return; }
     let entry = audioIndex[word];
     const stale = entry && entry.none && (Date.now() - entry.ts > RETRY_MS);
@@ -611,13 +628,24 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     const rec = entry.list[entry.pick % entry.list.length];
     showSource(word, rec, entry.list);
     const src = (await cacheGet(word, rec.url)) || rec.url;
+    if (my !== playToken) return;   // another word was requested meanwhile
     try {
-      const a = new Audio(src);
-      a.playbackRate = state.slow ? 0.7 : 1;
-      try { a.preservesPitch = true; a.webkitPreservesPitch = true; } catch (e) {}
-      currentAudio = a;
-      await a.play();
-    } catch (e) { showSource(word, null); speakTTS(word); }
+      try { if (player.src && player.src.startsWith("blob:")) URL.revokeObjectURL(player.src); } catch (e) {}
+      player.src = src;
+      try { player.preservesPitch = true; player.webkitPreservesPitch = true; } catch (e) {}
+      const rate = state.slow ? 0.7 : 1;
+      player.defaultPlaybackRate = rate; player.playbackRate = rate;
+      player.onplaying = () => { player.playbackRate = rate; };
+      await player.play();
+    } catch (e) {
+      if (my !== playToken) return;
+      if (e && e.name === "NotAllowedError") {
+        setStatus("iOS hat die Wiedergabe blockiert. Tippe noch einmal auf „Anhören“.", "bad");
+      } else {
+        setStatus("Die Aufnahme ließ sich nicht abspielen, daher kommt die Computerstimme.", "bad");
+        showSource(word, null); speakTTS(word);
+      }
+    }
   }
 
   async function prefetchRecordings(words, onProgress) {
