@@ -1,4 +1,4 @@
-const SHELL = "hanzi-shell-v5";
+const SHELL = "hanzi-shell-v7";
 const DATA = "hanzi-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "lib/hanzi-writer.min.js", "lib/pinyin-pro.js",
   "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
@@ -7,7 +7,7 @@ self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== DATA).map((k) => caches.delete(k))))
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== DATA && !k.startsWith("hanzi-audio")).map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", (e) => {

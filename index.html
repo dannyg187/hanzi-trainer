@@ -132,6 +132,11 @@ textarea { min-height: 110px; resize: vertical; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); -webkit-tap-highlight-color: transparent; }
 .box { touch-action: none; -webkit-user-select: none; user-select: none; }
+.src { margin: 0; font-size: .8rem; color: var(--muted); min-height: 1.2rem; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.src a { color: var(--cinnabar); }
+.src .tag { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 999px; background: var(--cinnabar-soft); color: var(--cinnabar); }
+.src .tag.tts { background: var(--paper); color: var(--muted); border: 1px solid var(--line); }
+.src button { font: inherit; font-size: .8rem; color: var(--cinnabar); background: none; border: none; padding: 0; text-decoration: underline; cursor: pointer; }
 .py-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .say { font: inherit; font-size: .85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; cursor: pointer; border: 1px solid var(--cinnabar); background: var(--cinnabar-soft); color: var(--cinnabar); }
 .say:hover { filter: brightness(1.04); }
@@ -190,8 +195,10 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
           <button class="say" id="sayBtn" type="button" aria-label="Aussprache anhören"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>Anhören</button>
           <label class="slow" for="slowIn"><input type="checkbox" id="slowIn"> Langsam</label>
           <label class="slow" for="autoIn"><input type="checkbox" id="autoIn"> Automatisch vorlesen</label>
-          <label class="slow" for="voiceSel">Stimme <select id="voiceSel"><option value="">Wird geladen…</option></select></label>
+          <label class="slow" for="realIn"><input type="checkbox" id="realIn"> Echte Aufnahmen bevorzugen</label>
+          <label class="slow" for="voiceSel">Ersatzstimme <select id="voiceSel"><option value="">Wird geladen…</option></select></label>
         </div>
+        <p class="src" id="audioSrc"></p>
       </div>
       <div class="field" id="charField">
         <span class="label">Schriftzeichen</span>
@@ -247,7 +254,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       </div>
       <div class="offline">
         <button class="btn" type="button" id="offlineBtn">Alle Schriftzeichen offline speichern</button>
-        <span class="hint" id="offlineStatus">Geöffnete Zeichen werden automatisch gespeichert. Hiermit lädst du alle 9.500 auf einmal (ca. 30 MB).</span>
+        <span class="hint" id="offlineStatus">Geöffnete Zeichen und Aufnahmen werden automatisch gespeichert. Hiermit lädst du alle 9.500 Zeichen und die Aufnahmen deiner Wörter auf einmal (ca. 30 MB).</span>
       </div>
     </div>
   </details>
@@ -331,6 +338,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     setStatus("");
     const w = state.words[state.idx];
     $("count").textContent = (state.idx + 1) + " von " + state.words.length;
+    stopAudio(); $("audioSrc").innerHTML = "";
     $("english").textContent = w.en || "—";
     $("pinyin").textContent = w.py;
     const showPy = !state.test || revealPy, showZh = !state.test || revealZh;
@@ -459,7 +467,11 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   function pickVoice() {
     try {
       const vs = speechSynthesis.getVoices();
-      const all = vs.filter(v => /^(zh|cmn)/i.test(v.lang));
+      const seen = new Set();
+      const all = vs.filter(v => /^(zh|cmn)/i.test(v.lang)).filter(v => {
+        const k = v.name.replace(/\s*\(.*\)\s*$/, "").toLowerCase() + "|" + v.lang.toLowerCase().replace("_", "-") + "|" + quality(v);
+        if (seen.has(k)) return false; seen.add(k); return true;
+      });
       // Mandarin (China) first, best quality first
       zhVoices = all.sort((a, b) => {
         const ra = /CN|Hans/i.test(a.lang) ? 0 : /TW/i.test(a.lang) ? 1 : 2, rb = /CN|Hans/i.test(b.lang) ? 0 : /TW/i.test(b.lang) ? 1 : 2;
@@ -482,7 +494,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     });
   }
   if ("speechSynthesis" in window) { pickVoice(); try { speechSynthesis.addEventListener("voiceschanged", pickVoice); } catch (e) {} [400, 1500, 4000].forEach(t => setTimeout(() => { if (!zhVoices.length) pickVoice(); }, t)); }
-  function speak(text) {
+  function speakTTS(text) {
     if (!("speechSynthesis" in window)) { setStatus("Dieses Gerät unterstützt keine Sprachausgabe.", "bad"); return; }
     if (!zhVoice) pickVoice();
     const han = [...text].filter(isHan).join("");
@@ -497,6 +509,133 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       speechSynthesis.speak(u);
       if (!zhVoice) setStatus("Keine chinesische Stimme gefunden. Am iPad: Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Chinesisch (China) laden.", "bad");
     } catch (e) { setStatus("Aussprache konnte nicht abgespielt werden.", "bad"); }
+  }
+
+
+  // ---- real recordings from Wikimedia Commons (Lingua Libre etc.) ----
+  const API = "https://commons.wikimedia.org/w/api.php";
+  const AUDIO_CACHE = "hanzi-audio-v1";
+  const RETRY_MS = 7 * 24 * 3600 * 1000;
+  let audioIndex = {};   // word -> { list:[{title,url,user,license,page}], pick, ts } or { none:true, ts }
+  try { audioIndex = JSON.parse(localStorage.getItem(KEY + "-audio") || "{}") || {}; } catch (e) {}
+  const saveAudioIndex = () => { try { localStorage.setItem(KEY + "-audio", JSON.stringify(audioIndex)); } catch (e) {} };
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const stripTags = (h) => { const d = document.createElement("div"); d.innerHTML = h || ""; return (d.textContent || "").trim(); };
+
+  function playableUrl(u) {
+    // Safari plays WAV and MP3 reliably; use Wikimedia's MP3 transcode for Ogg/FLAC/WebM
+    if (/\.(wav|mp3)$/i.test(u)) return u;
+    const m = u.match(/^(https:\/\/upload\.wikimedia\.org\/wikipedia\/commons)\/(.+\/)([^/]+)$/);
+    return m ? m[1] + "/transcoded/" + m[2] + m[3] + "/" + m[3] + ".mp3" : u;
+  }
+
+  async function findRecordings(word) {
+    const q = 'intitle:"' + word + '" filetype:audio';
+    const url = API + "?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=50" +
+      "&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|user|extmetadata&iiextmetadatafilter=LicenseShortName|Artist";
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("api " + r.status);
+    const j = await r.json();
+    const pages = Object.values((j.query && j.query.pages) || {});
+    const w = esc(word);
+    // Lingua Libre: "File:LL-Q… (cmn)-Speaker-学习.wav"; other Mandarin files: "File:Zh-学习.ogg", "File:Cmn-学习.ogg"
+    const reLL = new RegExp("^File:LL-Q\\d+ \\((cmn|zho|zh)[^)]*\\)-(.+?)-" + w + "\\.(wav|ogg|oga|mp3|flac|webm)$", "i");
+    const reZh = new RegExp("^File:(Zh|Cmn|Zh-cn|Zh-hans)-" + w + "\\.(wav|ogg|oga|mp3|flac|webm)$", "i");
+    const out = [];
+    pages.forEach(pg => {
+      const ii = pg.imageinfo && pg.imageinfo[0]; if (!ii) return;
+      const t = pg.title; let speaker = "";
+      const mLL = t.match(reLL);
+      if (mLL) speaker = mLL[2]; else if (!reZh.test(t)) return;
+      const md = ii.extmetadata || {};
+      out.push({ title: t, url: playableUrl(ii.url), user: speaker || stripTags(md.Artist && md.Artist.value) || ii.user || "unbekannt",
+        license: (md.LicenseShortName && md.LicenseShortName.value) || "freie Lizenz", page: ii.descriptionurl || ("https://commons.wikimedia.org/wiki/" + encodeURIComponent(t)),
+        ll: !!mLL });
+    });
+    out.sort((a, b) => (b.ll - a.ll) || (/\.wav$/i.test(b.url) - /\.wav$/i.test(a.url)));
+    return out;
+  }
+
+  async function cacheGet(word, url) {
+    try {
+      const c = await caches.open(AUDIO_CACHE);
+      const key = "audio/" + encodeURIComponent(word) + "?src=" + encodeURIComponent(url);
+      let res = await c.match(key);
+      if (!res) {
+        const net = await fetch(url, { mode: "cors" });
+        if (!net.ok) throw new Error("audio " + net.status);
+        await c.put(key, net.clone()); res = net;
+      }
+      return URL.createObjectURL(await res.blob());
+    } catch (e) { return null; }   // fall back to streaming the file directly
+  }
+
+  let currentAudio = null;
+  function stopAudio() { try { if (currentAudio) { currentAudio.pause(); currentAudio = null; } } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} }
+
+  function showSource(word, rec, list) {
+    const el = $("audioSrc"); el.innerHTML = "";
+    if (word !== state.words[state.idx].zh) return;   // only describe the main word
+    if (rec) {
+      const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "Echte Aufnahme"; el.appendChild(tag);
+      const t = document.createElement("span"); t.textContent = "Sprecher: " + rec.user + " · " + rec.license + " · "; el.appendChild(t);
+      const a = document.createElement("a"); a.href = rec.page; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Wikimedia Commons"; t.appendChild(a);
+      if (list && list.length > 1) {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = "Anderer Sprecher (" + list.length + ")";
+        b.addEventListener("click", () => { const e = audioIndex[word]; e.pick = (e.pick + 1) % e.list.length; saveAudioIndex(); speak(word); });
+        el.appendChild(b);
+      }
+    } else {
+      const tag = document.createElement("span"); tag.className = "tag tts"; tag.textContent = "Computerstimme"; el.appendChild(tag);
+      const t = document.createElement("span"); t.textContent = state.real === false ? "Echte Aufnahmen sind ausgeschaltet." : "Keine echte Aufnahme für dieses Wort gefunden."; el.appendChild(t);
+    }
+  }
+
+  async function speak(text) {
+    const word = [...text].filter(isHan).join("");
+    if (!word) return;
+    stopAudio();
+    if (state.real === false) { showSource(word, null); speakTTS(word); return; }
+    let entry = audioIndex[word];
+    const stale = entry && entry.none && (Date.now() - entry.ts > RETRY_MS);
+    if (!entry || stale) {
+      if (!navigator.onLine) { showSource(word, null); speakTTS(word); return; }
+      if (word === state.words[state.idx].zh) $("audioSrc").textContent = "Suche echte Aufnahme…";
+      try {
+        const list = await findRecordings(word);
+        entry = list.length ? { list, pick: 0, ts: Date.now() } : { none: true, ts: Date.now() };
+        audioIndex[word] = entry; saveAudioIndex();
+      } catch (e) { entry = null; }
+    }
+    if (!entry || entry.none) { showSource(word, null); speakTTS(word); return; }
+    const rec = entry.list[entry.pick % entry.list.length];
+    showSource(word, rec, entry.list);
+    const src = (await cacheGet(word, rec.url)) || rec.url;
+    try {
+      const a = new Audio(src);
+      a.playbackRate = state.slow ? 0.7 : 1;
+      try { a.preservesPitch = true; a.webkitPreservesPitch = true; } catch (e) {}
+      currentAudio = a;
+      await a.play();
+    } catch (e) { showSource(word, null); speakTTS(word); }
+  }
+
+  async function prefetchRecordings(words, onProgress) {
+    let found = 0, done = 0;
+    for (const w of words) {
+      const word = [...w.zh].filter(isHan).join("");
+      try {
+        let entry = audioIndex[word];
+        if (!entry || (entry.none && Date.now() - entry.ts > RETRY_MS)) {
+          const list = await findRecordings(word);
+          entry = list.length ? { list, pick: 0, ts: Date.now() } : { none: true, ts: Date.now() };
+          audioIndex[word] = entry; saveAudioIndex();
+        }
+        if (!entry.none) { found++; await cacheGet(word, entry.list[entry.pick % entry.list.length].url); }
+      } catch (e) {}
+      done++; onProgress(done, found);
+    }
+    return found;
   }
 
   function go(i) {
@@ -564,6 +703,8 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     zhVoice = zhVoices.find(v => v.voiceURI === state.voice) || zhVoice;
     speak(state.words[state.idx].zh);
   });
+  $("realIn").checked = state.real !== false;
+  $("realIn").addEventListener("change", (e) => { state.real = e.target.checked; save(); speak(state.words[state.idx].zh); });
   $("autoIn").checked = !!state.auto;
   $("autoIn").addEventListener("change", (e) => { state.auto = e.target.checked; save(); });
   $("speed").value = state.speed;
@@ -604,7 +745,12 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     $("offlineBtn").disabled = true;
     try {
       for (let n = 0; n < 32; n++) { await getData(String.fromCodePoint(0x4E00 + n)); done++; st.textContent = "Wird gespeichert… " + Math.round(done / 32 * 100) + "%"; }
-      st.textContent = "Alle Schriftzeichen gespeichert. Die App funktioniert jetzt ohne Internet.";
+      if (state.real !== false && !state.examples) {
+        const found = await prefetchRecordings(state.words, (d, f) => { st.textContent = "Aufnahmen werden gespeichert… " + d + " von " + state.words.length + " (" + f + " gefunden)"; });
+        st.textContent = "Alle Schriftzeichen gespeichert, dazu " + found + " echte Aufnahmen für deine " + state.words.length + " Wörter. Die App funktioniert jetzt ohne Internet.";
+      } else {
+        st.textContent = "Alle Schriftzeichen gespeichert. Die App funktioniert jetzt ohne Internet.";
+      }
     } catch (e) { st.textContent = "Speichern abgebrochen (" + done + " von 32 Teilen). Prüfe die Verbindung und versuch es erneut."; }
     $("offlineBtn").disabled = false;
   });
