@@ -1,4 +1,4 @@
-const SHELL = "hanzi-shell-v8";
+const SHELL = "hanzi-shell-v9";
 const DATA = "hanzi-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "lib/hanzi-writer.min.js", "lib/pinyin-pro.js",
   "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
@@ -14,6 +14,9 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  // leave Wikimedia lookups/recordings and any ranged media request to the browser
+  if (req.headers.has("range") || req.destination === "audio" || req.destination === "video") return;
+  if (url.origin !== self.location.origin && !url.hostname.endsWith("fonts.googleapis.com") && !url.hostname.endsWith("fonts.gstatic.com")) return;
   // character data and fonts: cache first, saved on first use
   if (url.pathname.includes("/data/") || url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")) {
     e.respondWith(caches.open(DATA).then((c) => c.match(req).then((hit) => hit || fetch(req).then((res) => {

@@ -339,7 +339,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     const w = state.words[state.idx];
     $("count").textContent = (state.idx + 1) + " von " + state.words.length;
     stopAudio(); $("audioSrc").innerHTML = "";
-    try { const ent = audioIndex[[...w.zh].filter(isHan).join("")]; if (ent && !ent.none && state.real !== false) cacheGet([...w.zh].filter(isHan).join(""), ent.list[ent.pick % ent.list.length].url).then(u => { if (u) URL.revokeObjectURL(u); }); } catch (e) {}
+    try { const ent = audioIndex[[...w.zh].filter(isHan).join("")]; if (ent && !ent.none && state.real !== false) cacheGet([...w.zh].filter(isHan).join(""), ent.list[ent.pick % ent.list.length].url).catch(() => {}); } catch (e) {}
     $("english").textContent = w.en || "—";
     $("pinyin").textContent = w.py;
     const showPy = !state.test || revealPy, showZh = !state.test || revealZh;
@@ -557,18 +557,17 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     return out;
   }
 
+  const mimeOf = (u) => /\.mp3($|\?)/i.test(u) ? "audio/mpeg" : /\.wav($|\?)/i.test(u) ? "audio/wav" : "audio/mpeg";
+  // returns { buf: ArrayBuffer, type } from the offline store, downloading it the first time
   async function cacheGet(word, url) {
-    try {
-      const c = await caches.open(AUDIO_CACHE);
-      const key = "audio/" + encodeURIComponent(word) + "?src=" + encodeURIComponent(url);
-      let res = await c.match(key);
-      if (!res) {
-        const net = await fetch(url, { mode: "cors" });
-        if (!net.ok) throw new Error("audio " + net.status);
-        await c.put(key, net.clone()); res = net;
-      }
-      return URL.createObjectURL(await res.blob());
-    } catch (e) { return null; }   // fall back to streaming the file directly
+    const key = "audio/" + encodeURIComponent(word) + "?src=" + encodeURIComponent(url);
+    let c = null;
+    try { c = await caches.open(AUDIO_CACHE); const hit = await c.match(key); if (hit) return { buf: await hit.arrayBuffer(), type: mimeOf(url) }; } catch (e) {}
+    const net = await fetch(url, { mode: "cors", cache: "no-store" });
+    if (!net.ok) throw new Error("HTTP " + net.status);
+    const buf = await net.arrayBuffer();
+    try { if (c) await c.put(key, new Response(buf.slice(0), { headers: { "Content-Type": mimeOf(url) } })); } catch (e) {}
+    return { buf, type: mimeOf(url) };
   }
 
   // One shared player. iOS only lets audio play right after a tap, so the player is
@@ -576,17 +575,27 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   const SILENT = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
   const player = new Audio();
   player.preload = "auto"; player.setAttribute("playsinline", "");
-  let unlocked = false, playToken = 0;
+  let unlocked = false, playToken = 0, actx = null, webSrc = null;
   function unlockPlayer() {
+    // Web Audio: create and resume inside the tap, play one silent sample
+    try {
+      if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+      if (actx) {
+        if (actx.state !== "running") actx.resume();
+        const b = actx.createBuffer(1, 1, 22050), n = actx.createBufferSource(); n.buffer = b; n.connect(actx.destination); n.start(0);
+      }
+    } catch (e) {}
     if (unlocked) return;
     try {
       player.src = SILENT;
       const p = player.play();
-      if (p && p.then) p.then(() => { unlocked = true; }).catch(() => {}); else unlocked = true;
+      unlocked = true;
+      if (p && p.catch) p.catch(() => {});
     } catch (e) {}
   }
-  ["pointerdown", "touchend", "click", "keydown"].forEach(ev => document.addEventListener(ev, unlockPlayer, { capture: true, passive: true }));
-  function stopAudio() { playToken++; try { player.pause(); } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} }
+  document.addEventListener("touchend", unlockPlayer, { capture: true, passive: true });
+  document.addEventListener("click", unlockPlayer, { capture: true, passive: true });
+  function stopAudio() { playToken++; try { player.pause(); } catch (e) {} try { if (webSrc) { webSrc.stop(); webSrc = null; } } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} }
 
   function showSource(word, rec, list) {
     const el = $("audioSrc"); el.innerHTML = "";
@@ -627,25 +636,51 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     if (!entry || entry.none) { showSource(word, null); speakTTS(word); return; }
     const rec = entry.list[entry.pick % entry.list.length];
     showSource(word, rec, entry.list);
-    const src = (await cacheGet(word, rec.url)) || rec.url;
-    if (my !== playToken) return;   // another word was requested meanwhile
-    try {
-      try { if (player.src && player.src.startsWith("blob:")) URL.revokeObjectURL(player.src); } catch (e) {}
-      player.src = src;
-      try { player.preservesPitch = true; player.webkitPreservesPitch = true; } catch (e) {}
-      const rate = state.slow ? 0.7 : 1;
-      player.defaultPlaybackRate = rate; player.playbackRate = rate;
-      player.onplaying = () => { player.playbackRate = rate; };
-      await player.play();
-    } catch (e) {
-      if (my !== playToken) return;
-      if (e && e.name === "NotAllowedError") {
-        setStatus("iOS hat die Wiedergabe blockiert. Tippe noch einmal auf „Anhören“.", "bad");
-      } else {
-        setStatus("Die Aufnahme ließ sich nicht abspielen, daher kommt die Computerstimme.", "bad");
-        showSource(word, null); speakTTS(word);
+    const rate = state.slow ? 0.7 : 1;
+    const why = [];
+    let data = null;
+    try { data = await cacheGet(word, rec.url); } catch (e) { why.push("Laden: " + (e.message || e.name)); }
+    if (my !== playToken) return;
+
+    // Web Audio is the most reliable path on iPad once the tap has unlocked it.
+    // It cannot slow down without changing pitch (bad for tones), so "Langsam" tries the normal player first.
+    const viaWebAudio = async () => {
+      if (!data) return false;
+      if (!actx) { why.push("Web Audio fehlt"); return false; }
+      try {
+        if (actx.state !== "running") await actx.resume();
+        const audioBuf = await new Promise((res, rej) => { const pr = actx.decodeAudioData(data.buf.slice(0), res, rej); if (pr && pr.then) pr.then(res, rej); });
+        if (my !== playToken) return true;
+        const n = actx.createBufferSource(); n.buffer = audioBuf;
+        n.connect(actx.destination); n.start(0); webSrc = n;
+        if (actx.state === "running") return true;
+        why.push("Web Audio: " + actx.state);
+      } catch (e) { why.push("Web Audio: " + (e && (e.name || e.message) || "Fehler")); }
+      return false;
+    };
+    const viaPlayer = async () => {
+      const tries = [];
+      if (data) tries.push(URL.createObjectURL(new Blob([data.buf], { type: data.type })));
+      tries.push(rec.url);
+      for (const src of tries) {
+        if (my !== playToken) return true;
+        try {
+          player.src = src;
+          try { player.preservesPitch = true; player.webkitPreservesPitch = true; } catch (e) {}
+          player.defaultPlaybackRate = rate; player.playbackRate = rate;
+          player.onplaying = () => { player.playbackRate = rate; };
+          await player.play();
+          return true;
+        } catch (e) { why.push("Player: " + (e && e.name || "Fehler")); }
       }
-    }
+      return false;
+    };
+    const order = rate !== 1 ? [viaPlayer, viaWebAudio] : [viaWebAudio, viaPlayer];
+    for (const f of order) { if (await f()) return; }
+
+    if (my !== playToken) return;
+    setStatus("Aufnahme nicht abspielbar (" + why.join("; ") + "). Ersatz: Computerstimme.", "bad");
+    showSource(word, null); speakTTS(word);
   }
 
   async function prefetchRecordings(words, onProgress) {
