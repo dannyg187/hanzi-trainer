@@ -1,0 +1,17 @@
+{
+  "name": "Hanzi Strichfolge",
+  "short_name": "Hanzi",
+  "description": "Chinesische Schriftzeichen üben: erst Deutsch, dann Pinyin, dann animierte Strichfolge und Nachzeichnen.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F6F3",
+  "theme_color": "#B3322A",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

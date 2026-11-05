@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hanzi Strichfolge</title>
+<meta name="theme-color" content="#B3322A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hanzi">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&family=Spectral:wght@500;600&display=swap">
+<style>
+/* Layout: word list rail on the left, one study card on the right (English → pinyin → characters → stroke strip); stacks on phones */
+:root {
+  --paper: #F4F6F3;
+  --surface: #FFFFFF;
+  --ink: #1E2320;
+  --muted: #646C66;
+  --line: #D6DBD5;
+  --guide: #E8CFCA;
+  --cinnabar: #B3322A;
+  --cinnabar-soft: #F6E5E2;
+  --jade: #2C6A55;
+  --font-display: "Spectral", Georgia, "Times New Roman", serif;
+  --font-ui: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cjk: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141716; --surface: #1C201F; --ink: #E8ECE9; --muted: #9AA29D;
+    --line: #303633; --guide: #4B302D; --cinnabar: #E6685D; --cinnabar-soft: #3A2321; --jade: #6EC19F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #141716; --surface: #1C201F; --ink: #E8ECE9; --muted: #9AA29D;
+  --line: #303633; --guide: #4B302D; --cinnabar: #E6685D; --cinnabar-soft: #3A2321; --jade: #6EC19F;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; border-bottom: 2px solid var(--cinnabar); padding-bottom: 10px; }
+header h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; color: var(--cinnabar); text-wrap: balance; }
+header p { margin: 0; color: var(--muted); font-size: .9rem; }
+.label { font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--cinnabar); }
+
+.main { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+/* rail */
+.rail { display: grid; gap: 10px; min-width: 0; }
+.rail-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.badge { font-size: .7rem; padding: 1px 8px; border-radius: 999px; background: var(--cinnabar-soft); color: var(--cinnabar); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 60vh; overflow-y: auto; }
+@media (max-width: 760px) { .list { display: flex; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; } }
+.list button {
+  width: 100%; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: center; text-align: left;
+  font: inherit; color: inherit; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 6px 10px; cursor: pointer;
+}
+@media (max-width: 760px) { .list button { width: auto; white-space: nowrap; border-color: var(--line); background: var(--surface); } }
+.list button:hover { background: var(--surface); border-color: var(--line); }
+.list button[aria-current="true"] { background: var(--surface); border-color: var(--cinnabar); }
+.list .zh { font-family: var(--font-cjk); font-size: 1.15rem; }
+.list .en { color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* card */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; display: grid; gap: 18px; min-width: 0; }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+.count { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.field { display: grid; gap: 2px; }
+.english { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.2; text-wrap: balance; margin: 0; }
+.pinyin { font-size: 1.35rem; font-weight: 500; letter-spacing: .02em; margin: 0; min-height: 2rem; }
+.reveal { font: inherit; font-size: .85rem; justify-self: start; color: var(--cinnabar); background: var(--cinnabar-soft); border: 1px dashed var(--cinnabar); border-radius: 6px; padding: 4px 12px; cursor: pointer; }
+
+.chars { display: flex; flex-wrap: wrap; gap: 14px; }
+.box { position: relative; border: 1.5px solid var(--cinnabar); background: var(--surface); width: var(--size); height: var(--size); max-width: 100%; }
+.box svg.grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.box .hw { position: absolute; inset: 0; }
+.box .missing { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); font-size: .8rem; padding: 10px; }
+.box .missing b { display: block; font-family: var(--font-cjk); font-size: 3rem; color: var(--ink); font-weight: 400; }
+.hidden-chars .box .hw { visibility: hidden; }
+.hidden-chars.quizzing .box .hw { visibility: visible; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-size: .9rem; font-weight: 500; border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--cinnabar); border-color: var(--cinnabar); color: var(--surface); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn[aria-pressed="true"] { background: var(--cinnabar-soft); border-color: var(--cinnabar); color: var(--cinnabar); }
+.btn:focus-visible, .list button:focus-visible, .reveal:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+.speed { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; margin-left: auto; }
+.speed input { accent-color: var(--cinnabar); width: 110px; }
+.status { min-height: 1.4rem; font-size: .9rem; color: var(--muted); margin: 0; }
+.status.good { color: var(--jade); }
+.status.bad { color: var(--cinnabar); }
+
+.strips { display: grid; gap: 14px; }
+.strip-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.strip-head .zh { font-family: var(--font-cjk); font-size: 1.1rem; }
+.strip-head .n { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.strip { display: flex; flex-wrap: wrap; border-top: 1px solid var(--cinnabar); border-left: 1px solid var(--cinnabar); }
+.strip figure { margin: 0; width: 52px; height: 52px; position: relative; border-right: 1px solid var(--cinnabar); border-bottom: 1px solid var(--cinnabar); }
+.strip figure span { position: absolute; top: 1px; left: 3px; font-size: .6rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.strip svg { width: 100%; height: 100%; display: block; }
+.hidden-chars .strips { display: none; }
+
+/* add panel */
+details.add { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 18px; }
+details.add summary { cursor: pointer; font-weight: 600; }
+.add-grid { display: grid; gap: 14px; margin-top: 14px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)) auto; gap: 10px; align-items: end; }
+@media (max-width: 640px) { .row3 { grid-template-columns: minmax(0,1fr); } }
+label.f { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+input[type="text"], textarea { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+textarea { min-height: 110px; resize: vertical; }
+#zhIn { font-family: var(--font-cjk); }
+.hint { font-size: .82rem; color: var(--muted); margin: 0; }
+.hint code { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.add-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); -webkit-tap-highlight-color: transparent; }
+.box { touch-action: none; -webkit-user-select: none; user-select: none; }
+.offline { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Hanzi Strichfolge</h1>
+    <p>Erst Deutsch, dann Pinyin, dann jeden Strich ansehen und nachziehen.</p>
+  </header>
+
+  <div class="main">
+    <aside class="rail">
+      <div class="rail-head">
+        <span class="label">Vokabeln</span>
+        <span class="badge" id="exampleBadge" hidden>Beispielliste</span>
+      </div>
+      <ul class="list" id="list"></ul>
+    </aside>
+
+    <section class="card" id="card" aria-live="polite">
+      <div class="top">
+        <span class="count" id="count"></span>
+        <div class="controls">
+          <button class="btn" id="prevBtn" type="button" aria-label="Vorheriges Wort">← Zurück</button>
+          <button class="btn" id="nextBtn" type="button" aria-label="Nächstes Wort">Weiter →</button>
+          <button class="btn" id="testBtn" type="button" aria-pressed="false">Abfragen</button>
+          <button class="btn" id="delBtn" type="button">Wort löschen</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">Deutsch</span>
+        <p class="english" id="english"></p>
+      </div>
+      <div class="field">
+        <span class="label">Pinyin</span>
+        <p class="pinyin" id="pinyin"></p>
+        <button class="reveal" id="revealPy" type="button" hidden>Pinyin zeigen</button>
+      </div>
+      <div class="field" id="charField">
+        <span class="label">Schriftzeichen</span>
+        <div class="chars" id="chars"></div>
+        <button class="reveal" id="revealZh" type="button" hidden>Schriftzeichen zeigen</button>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="playBtn" type="button">▶ Abspielen</button>
+        <button class="btn" id="loopBtn" type="button" aria-pressed="false">Wiederholen</button>
+        <button class="btn" id="quizBtn" type="button">✎ Üben</button>
+        <label class="speed" for="speed">Tempo <input id="speed" type="range" min="0.3" max="2.5" step="0.1" value="1"></label>
+      </div>
+      <p class="status" id="status"></p>
+
+      <div class="field">
+        <span class="label">Strichfolge</span>
+        <div class="strips" id="strips"></div>
+      </div>
+    </section>
+  </div>
+
+  <details class="add" id="addPanel">
+    <summary>Eigene Wörter hinzufügen</summary>
+    <div class="add-grid">
+      <form class="row3" id="oneForm">
+        <label class="f" for="enIn">Deutsch<input type="text" id="enIn" placeholder="lernen" autocomplete="off"></label>
+        <label class="f" for="pyIn">Pinyin (leer lassen = automatisch)<input type="text" id="pyIn" placeholder="xuéxí" autocomplete="off"></label>
+        <label class="f" for="zhIn">Schriftzeichen<input type="text" id="zhIn" placeholder="学习" autocomplete="off"></label>
+        <button class="btn primary" type="submit">Hinzufügen</button>
+      </form>
+      <form class="add-grid" id="bulkForm" style="margin-top:0">
+        <label class="f" for="bulkIn">Liste einfügen, ein Wort pro Zeile
+          <textarea id="bulkIn" placeholder="lernen | xuéxí | 学习&#10;Lehrer | 老师&#10;咖啡"></textarea>
+        </label>
+        <p class="hint">Format: <code>Deutsch | Pinyin | 汉字</code> oder <code>Deutsch | 汉字</code>. Fehlt das Pinyin, wird es automatisch ergänzt.</p>
+        <div class="add-actions">
+          <button class="btn primary" type="submit">Liste hinzufügen</button>
+          <button class="btn" type="button" id="replaceBtn">Aktuelle Liste ersetzen</button>
+        </div>
+      </form>
+      <p class="status" id="addStatus"></p>
+      <div class="offline">
+        <button class="btn" type="button" id="offlineBtn">Alle Schriftzeichen offline speichern</button>
+        <span class="hint" id="offlineStatus">Geöffnete Zeichen werden automatisch gespeichert. Hiermit lädst du alle 9.500 auf einmal (ca. 30 MB).</span>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script src="lib/hanzi-writer.min.js"></script>
+<script src="lib/pinyin-pro.js"></script>
+<script>
+(function () {
+  const EXAMPLES = [
+    { en: "hallo", py: "nǐ hǎo", zh: "你好" },
+    { en: "danke", py: "xièxie", zh: "谢谢" },
+    { en: "Student, Schüler", py: "xuésheng", zh: "学生" },
+    { en: "China", py: "Zhōngguó", zh: "中国" },
+    { en: "Freund", py: "péngyou", zh: "朋友" },
+    { en: "essen (eine Mahlzeit)", py: "chī fàn", zh: "吃饭" },
+    { en: "Wasser", py: "shuǐ", zh: "水" },
+    { en: "Liebe; lieben", py: "ài", zh: "爱" }
+  ];
+  const KEY = "hanzi-trainer-v1";
+  const $ = (id) => document.getElementById(id);
+  const isHan = (c) => /\p{Script=Han}/u.test(c);
+
+  let state = { words: EXAMPLES.slice(), examples: true, idx: 0, test: false, speed: 1 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved && Array.isArray(saved.words) && saved.words.length) { state = Object.assign(state, saved); if (state.examples) state.words = EXAMPLES.slice(); }
+  } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+  // stroke data: sharded by code point, fetched on demand
+  const shards = {};
+  function getData(ch) {
+    const n = ch.codePointAt(0) % 32;
+    if (!shards[n]) shards[n] = fetch("data/s" + n + ".json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .catch(err => { delete shards[n]; throw err; });
+    return shards[n].then(d => d[ch] || null);
+  }
+
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  function colors() {
+    return { strokeColor: css("--ink"), outlineColor: css("--line"), drawingColor: css("--ink"),
+             highlightColor: css("--cinnabar"), radicalColor: null };
+  }
+
+  let writers = [];      // { ch, writer }
+  let token = 0;         // cancels stale animation chains
+  let looping = false, revealPy = false, revealZh = false;
+
+  function gridSvg() {
+    return '<svg class="grid" viewBox="0 0 100 100" aria-hidden="true" preserveAspectRatio="none">' +
+      '<g stroke="var(--guide)" stroke-width="0.6" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" fill="none">' +
+      '<line x1="50" y1="0" x2="50" y2="100"/><line x1="0" y1="50" x2="100" y2="50"/>' +
+      '<line x1="0" y1="0" x2="100" y2="100"/><line x1="100" y1="0" x2="0" y2="100"/></g></svg>';
+  }
+
+  function boxSize(n) {
+    const w = $("chars").clientWidth || 600;
+    const per = Math.floor((w - 14 * (n - 1)) / n);
+    return Math.max(110, Math.min(240, per));
+  }
+
+  function renderList() {
+    const ul = $("list"); ul.innerHTML = "";
+    state.words.forEach((w, i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button"; b.setAttribute("aria-current", i === state.idx ? "true" : "false");
+      b.innerHTML = '<span class="zh"></span><span class="en"></span>';
+      b.querySelector(".zh").textContent = state.test ? "？" : w.zh;
+      b.querySelector(".en").textContent = w.en || w.py;
+      b.addEventListener("click", () => go(i));
+      li.appendChild(b); ul.appendChild(li);
+    });
+    $("exampleBadge").hidden = !state.examples;
+  }
+
+  function renderCard() {
+    token++; looping = false; $("loopBtn").setAttribute("aria-pressed", "false");
+    $("card").classList.remove("quizzing");
+    setStatus("");
+    const w = state.words[state.idx];
+    $("count").textContent = (state.idx + 1) + " von " + state.words.length;
+    $("english").textContent = w.en || "—";
+    $("pinyin").textContent = w.py;
+    const showPy = !state.test || revealPy, showZh = !state.test || revealZh;
+    $("pinyin").hidden = !showPy; $("revealPy").hidden = showPy;
+    $("charField").classList.toggle("hidden-chars", !showZh);
+    $("card").classList.toggle("hidden-chars", !showZh);
+    $("revealZh").hidden = showZh;
+    $("testBtn").setAttribute("aria-pressed", state.test ? "true" : "false");
+
+    const chars = [...w.zh].filter(isHan);
+    const wrap = $("chars"); wrap.innerHTML = "";
+    const strips = $("strips"); strips.innerHTML = "";
+    writers = [];
+    const size = boxSize(Math.max(1, chars.length));
+    const col = colors();
+    chars.forEach((ch) => {
+      const box = document.createElement("div");
+      box.className = "box"; box.style.setProperty("--size", size + "px");
+      box.innerHTML = gridSvg() + '<div class="hw"></div>';
+      wrap.appendChild(box);
+      const target = box.querySelector(".hw");
+      if (!window.HanziWriter) {
+        box.innerHTML = gridSvg() + '<div class="missing"><div><b></b>Strichanimation konnte nicht geladen werden</div></div>';
+        box.querySelector("b").textContent = ch;
+      } else {
+      const writer = HanziWriter.create(target, ch, Object.assign({
+        width: size, height: size, padding: Math.round(size * 0.06),
+        showOutline: true, strokeAnimationSpeed: state.speed, delayBetweenStrokes: 250 / state.speed,
+        charDataLoader: (c, onLoad, onErr) => getData(c).then(d => d ? onLoad(d) : onErr(new Error("none"))).catch(onErr),
+        onLoadCharDataError: () => {
+          box.innerHTML = gridSvg() + '<div class="missing"><div><b></b>Keine Strichdaten für dieses Zeichen</div></div>';
+          box.querySelector("b").textContent = ch;
+        }
+      }, col));
+      writers.push({ ch, writer });
+      }
+
+      const block = document.createElement("div");
+      block.innerHTML = '<div class="strip-head"><span class="zh"></span><span class="n">Lädt…</span></div><div class="strip"></div>';
+      block.querySelector(".zh").textContent = ch;
+      strips.appendChild(block);
+      getData(ch).then(d => buildStrip(block, d)).catch(() => buildStrip(block, null));
+    });
+    if (!chars.length) wrap.innerHTML = '<p class="hint">Dieser Eintrag enthält keine chinesischen Schriftzeichen.</p>';
+    renderList();
+    save();
+  }
+
+  function buildStrip(block, d) {
+    const n = block.querySelector(".n"), strip = block.querySelector(".strip");
+    if (!d) { n.textContent = "Keine Strichdaten"; return; }
+    const total = d.strokes.length;
+    n.textContent = total + (total === 1 ? " Strich" : " Striche");
+    let html = "";
+    for (let k = 1; k <= total; k++) {
+      let paths = "";
+      for (let i = 0; i < k; i++) {
+        paths += '<path d="' + d.strokes[i] + '" fill="' + (i === k - 1 ? "var(--cinnabar)" : "var(--ink)") + '"/>';
+      }
+      html += '<figure><span>' + k + '</span><svg viewBox="0 0 1024 1024" role="img" aria-label="Strich ' + k + ' von ' + total + '">' +
+        '<g stroke="var(--guide)" stroke-width="10" stroke-dasharray="30 30" fill="none"><line x1="512" y1="0" x2="512" y2="1024"/><line x1="0" y1="512" x2="1024" y2="512"/></g>' +
+        '<g transform="translate(0,900) scale(1,-1)">' + paths + '</g></svg></figure>';
+    }
+    strip.innerHTML = html;
+  }
+
+  function setStatus(msg, kind) { const s = $("status"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+
+  function cancelAll() {
+    token++;
+    writers.forEach(({ writer }) => { try { writer.cancelQuiz(); } catch (e) {} });
+    $("card").classList.remove("quizzing");
+  }
+
+  function animateAll(loop) {
+    cancelAll();
+    const my = token;
+    writers.forEach(({ writer }) => { writer.showOutline(); writer.hideCharacter(); });
+    let i = 0;
+    const step = () => {
+      if (my !== token) return;
+      if (i >= writers.length) {
+        if (loop && looping) { setTimeout(() => { if (my !== token) return; writers.forEach(({ writer }) => writer.hideCharacter()); i = 0; step(); }, 900); }
+        return;
+      }
+      writers[i].writer.animateCharacter({ onComplete: () => { i++; setTimeout(step, 300); } });
+    };
+    step();
+  }
+
+  function practice() {
+    cancelAll();
+    looping = false; $("loopBtn").setAttribute("aria-pressed", "false");
+    if (!writers.length) return;
+    const my = token;
+    const hidden = state.test && !revealZh;
+    $("card").classList.add("quizzing");
+    writers.forEach(({ writer }) => { writer.hideCharacter(); hidden ? writer.hideOutline() : writer.showOutline(); });
+    let i = 0, mistakes = 0;
+    const next = () => {
+      if (my !== token) return;
+      if (i >= writers.length) {
+        $("card").classList.remove("quizzing");
+        writers.forEach(({ writer }) => { writer.showOutline(); writer.showCharacter(); });
+        setStatus(mistakes === 0 ? "Perfekt, keine Fehler." : "Fertig mit " + mistakes + " Fehler" + (mistakes === 1 ? "." : "n.") + " Versuch es noch einmal fehlerfrei.", mistakes === 0 ? "good" : "bad");
+        return;
+      }
+      const { ch, writer } = writers[i];
+      setStatus("Zeichne " + ch + " im Kästchen nach" + (writers.length > 1 ? " (" + (i + 1) + " von " + writers.length + ")" : "") + ". Strich für Strich in der richtigen Reihenfolge.");
+      writer.quiz({
+        showHintAfterMisses: 2,
+        onMistake: (s) => { mistakes++; setStatus("Nicht ganz. Das sollte Strich " + (s.strokeNum + 1) + " sein. Achte auf den Hinweis und versuch es erneut.", "bad"); },
+        onCorrectStroke: (s) => setStatus("Strich " + (s.strokeNum + 1) + " von " + (s.strokeNum + 1 + s.strokesRemaining) + " richtig.", "good"),
+        onComplete: () => { i++; setTimeout(next, 400); }
+      });
+    };
+    next();
+  }
+
+  function go(i) {
+    if (!state.words.length) return;
+    state.idx = (i + state.words.length) % state.words.length;
+    revealPy = false; revealZh = false;
+    renderCard();
+  }
+
+  // pinyin helper
+  function autoPinyin(zh) {
+    try { return window.pinyinPro ? pinyinPro.pinyin(zh, { toneType: "symbol" }) : ""; } catch (e) { return ""; }
+  }
+  function parseLine(line) {
+    const parts = line.split(/\s*[|\t]\s*/).map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return null;
+    let en = "", py = "", zh = "";
+    const hanIdx = parts.findIndex(p => [...p].some(isHan));
+    if (hanIdx < 0) return null;
+    zh = parts[hanIdx];
+    const rest = parts.filter((_, k) => k !== hanIdx);
+    if (rest.length >= 2) { en = rest[0]; py = rest[1]; }
+    else if (rest.length === 1) { en = rest[0]; }
+    if (!py) py = autoPinyin(zh);
+    return { en, py, zh };
+  }
+  function addWords(words, replace) {
+    if (!words.length) { addStatus("Keine chinesischen Schriftzeichen gefunden. Jede Zeile braucht mindestens ein Zeichen.", "bad"); return; }
+    if (replace || state.examples) state.words = [];
+    state.examples = false;
+    const start = state.words.length;
+    state.words.push(...words);
+    state.idx = start;
+    revealPy = revealZh = false;
+    renderCard();
+    addStatus(words.length + (words.length === 1 ? " Wort" : " Wörter") + " hinzugefügt.", "good");
+  }
+  function addStatus(msg, kind) { const s = $("addStatus"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+
+  // events
+  $("prevBtn").addEventListener("click", () => go(state.idx - 1));
+  $("nextBtn").addEventListener("click", () => go(state.idx + 1));
+  $("testBtn").addEventListener("click", () => { state.test = !state.test; revealPy = revealZh = false; renderCard(); });
+  $("revealPy").addEventListener("click", () => { revealPy = true; $("pinyin").hidden = false; $("revealPy").hidden = true; });
+  $("revealZh").addEventListener("click", () => { revealZh = true; cancelAll(); $("card").classList.remove("hidden-chars"); $("charField").classList.remove("hidden-chars"); $("revealZh").hidden = true; writers.forEach(({ writer }) => { writer.showOutline(); writer.showCharacter(); }); renderList(); });
+  $("delBtn").addEventListener("click", () => {
+    if (state.words.length <= 1) { setStatus("Mindestens ein Wort muss bleiben. Füge unten neue Wörter hinzu und lösche dann dieses.", "bad"); return; }
+    state.words.splice(state.idx, 1);
+    if (state.idx >= state.words.length) state.idx = state.words.length - 1;
+    renderCard();
+  });
+  $("playBtn").addEventListener("click", () => { looping = false; $("loopBtn").setAttribute("aria-pressed", "false"); setStatus(""); animateAll(false); });
+  $("loopBtn").addEventListener("click", () => {
+    looping = !looping; $("loopBtn").setAttribute("aria-pressed", looping ? "true" : "false");
+    if (looping) { setStatus(""); animateAll(true); } else { cancelAll(); writers.forEach(({ writer }) => writer.showCharacter()); }
+  });
+  $("quizBtn").addEventListener("click", practice);
+  $("speed").value = state.speed;
+  $("speed").addEventListener("change", (e) => { state.speed = parseFloat(e.target.value) || 1; renderCard(); });
+
+  $("oneForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const zh = $("zhIn").value.trim();
+    if (![...zh].some(isHan)) { addStatus("Gib im Feld Schriftzeichen mindestens ein chinesisches Zeichen ein.", "bad"); return; }
+    const w = { en: $("enIn").value.trim(), py: $("pyIn").value.trim() || autoPinyin(zh), zh };
+    addWords([w], false);
+    $("enIn").value = $("pyIn").value = $("zhIn").value = "";
+  });
+  const bulk = (replace) => {
+    const words = $("bulkIn").value.split(/\r?\n/).map(parseLine).filter(Boolean);
+    addWords(words, replace);
+    if (words.length) $("bulkIn").value = "";
+  };
+  $("bulkForm").addEventListener("submit", (e) => { e.preventDefault(); bulk(false); });
+  $("replaceBtn").addEventListener("click", () => bulk(true));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea")) return;
+    if (e.key === "ArrowRight") go(state.idx + 1);
+    else if (e.key === "ArrowLeft") go(state.idx - 1);
+    else if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); animateAll(false); }
+  });
+
+  // re-color writers when the theme changes
+  const recolor = () => { const c = colors(); writers.forEach(({ writer }) => Object.entries(c).forEach(([k, v]) => { try { writer.updateColor(k, v); } catch (e) {} })); };
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", recolor); } catch (e) {}
+  new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const s = boxSize(writers.length || 1); if (Math.abs(s - (parseInt(($("chars").querySelector(".box") || {}).style?.getPropertyValue("--size")) || s)) > 20) renderCard(); }, 250); });
+
+  $("offlineBtn").addEventListener("click", async () => {
+    const st = $("offlineStatus"); let done = 0;
+    $("offlineBtn").disabled = true;
+    try {
+      for (let n = 0; n < 32; n++) { await getData(String.fromCodePoint(0x4E00 + n)); done++; st.textContent = "Wird gespeichert… " + Math.round(done / 32 * 100) + "%"; }
+      st.textContent = "Alle Schriftzeichen gespeichert. Die App funktioniert jetzt ohne Internet.";
+    } catch (e) { st.textContent = "Speichern abgebrochen (" + done + " von 32 Teilen). Prüfe die Verbindung und versuch es erneut."; }
+    $("offlineBtn").disabled = false;
+  });
+
+  if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
+
+  if (state.idx >= state.words.length) state.idx = 0;
+  renderCard();
+})();
+</script>
+</body>
+</html>
