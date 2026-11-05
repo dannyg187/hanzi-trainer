@@ -258,6 +258,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       </div>
     </div>
   </details>
+  <p class="hint" style="text-align:center">Version 1.9 · 5. Nov 2026</p>
 </div>
 
 <script src="lib/hanzi-writer.min.js"></script>
@@ -275,6 +276,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     { en: "Liebe; lieben", py: "ài", zh: "爱" }
   ];
   const KEY = "hanzi-trainer-v1";
+  const APP_VERSION = "1.9 · 5. Nov 2026";
   const $ = (id) => document.getElementById(id);
   const isHan = (c) => /\p{Script=Han}/u.test(c);
 
@@ -699,7 +701,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     for (const f of order) { if (await f()) return; }
 
     if (my !== playToken) return;
-    setStatus("Aufnahme nicht abspielbar (" + why.join("; ") + "). Ersatz: Computerstimme.", "bad");
+    setStatus("Aufnahme nicht abspielbar (" + why.join("; ") + "). Ersatz: Computerstimme. [App " + APP_VERSION + "]", "bad");
     showSource(word, null); speakTTS(word);
   }
 
@@ -892,7 +894,19 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     e.target.value = "";
   });
 
-  if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
+  // offline support + automatic updates: check for a new version on every launch and reload once it is active
+  if ("serviceWorker" in navigator) {
+    let reloading = false;
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (reloading || !hadController) return; reloading = true; location.reload(); });
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+        const check = () => { try { reg.update(); } catch (e) {} };
+        check();
+        document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+      }).catch(() => {});
+    });
+  }
 
   if (state.idx >= state.words.length) state.idx = 0;
   renderCard();

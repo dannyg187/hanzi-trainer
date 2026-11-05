@@ -1,10 +1,10 @@
-const SHELL = "hanzi-shell-v10";
+const SHELL = "hanzi-shell-v11";
 const DATA = "hanzi-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "lib/hanzi-writer.min.js", "lib/pinyin-pro.js",
   "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES.map((f) => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== DATA && !k.startsWith("hanzi-audio")).map((k) => caches.delete(k))))
@@ -26,7 +26,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   // app shell: network first so updates arrive, cache when offline
-  e.respondWith(fetch(req).then((res) => {
+  e.respondWith(fetch(req, { cache: "no-cache" }).then((res) => {
     if (res.ok && url.origin === self.location.origin) caches.open(SHELL).then((c) => c.put(req, res.clone()));
     return res;
   }).catch(() => caches.match(req).then((hit) => hit || caches.match("index.html"))));
