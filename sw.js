@@ -1,6 +1,6 @@
-const SHELL = "hanzi-shell-v11";
+const SHELL = "hanzi-shell-v14";
 const DATA = "hanzi-data-v1";
-const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "lib/hanzi-writer.min.js", "lib/pinyin-pro.js",
+const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "lib/hanzi-writer.min.js", "lib/pinyin-pro.js", "lib/jspdf.umd.min.js", "lib/DejaVuSans-sub.ttf",
   "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

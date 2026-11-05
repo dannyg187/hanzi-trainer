@@ -26,6 +26,8 @@
   --cinnabar: #B3322A;
   --cinnabar-soft: #F6E5E2;
   --jade: #2C6A55;
+  --jade-soft: #E1EFE9;
+  --t1: #C62828; --t2: #C77700; --t3: #2E7D32; --t4: #1F5FBF;
   --font-display: "Spectral", Georgia, "Times New Roman", serif;
   --font-ui: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-cjk: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
@@ -34,16 +36,17 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #141716; --surface: #1C201F; --ink: #E8ECE9; --muted: #9AA29D;
-    --line: #303633; --guide: #4B302D; --cinnabar: #E6685D; --cinnabar-soft: #3A2321; --jade: #6EC19F;
+    --line: #303633; --guide: #4B302D; --cinnabar: #E6685D; --cinnabar-soft: #3A2321; --jade: #6EC19F; --jade-soft: #1E3A30; --t1: #FF7A70; --t2: #F2A93B; --t3: #6CCB7A; --t4: #78A8FF;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #141716; --surface: #1C201F; --ink: #E8ECE9; --muted: #9AA29D;
-  --line: #303633; --guide: #4B302D; --cinnabar: #E6685D; --cinnabar-soft: #3A2321; --jade: #6EC19F;
+  --line: #303633; --guide: #4B302D; --cinnabar: #E6685D; --cinnabar-soft: #3A2321; --jade: #6EC19F; --jade-soft: #1E3A30; --t1: #FF7A70; --t2: #F2A93B; --t3: #6CCB7A; --t4: #78A8FF;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -153,6 +156,59 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
 .file-btn:focus-within { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
 .offline { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.tab { font: inherit; font-weight: 500; font-size: .95rem; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 14px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; margin-bottom: -1px; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--cinnabar); border-bottom-color: var(--cinnabar); }
+.tab:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: -2px; }
+.pill { font-size: .72rem; font-weight: 600; min-width: 20px; padding: 0 7px; border-radius: 999px; background: var(--cinnabar); color: var(--surface); font-variant-numeric: tabular-nums; text-align: center; }
+.view { max-width: 820px; }
+.edit { display: grid; gap: 10px; padding: 14px; border: 1px dashed var(--cinnabar); border-radius: 8px; background: var(--paper); }
+.edit-row { grid-template-columns: repeat(3, minmax(0,1fr)); }
+@media (max-width: 640px) { .edit-row { grid-template-columns: minmax(0,1fr); } }
+#editZh { font-family: var(--font-cjk); }
+#revBody { display: grid; gap: 18px; }
+.empty { display: grid; gap: 6px; padding: 24px 0; }
+.muted-q { color: var(--muted); font-size: .95rem; font-weight: 400; }
+.grade { display: grid; gap: 8px; }
+.grade small { display: block; font-size: .72rem; color: var(--muted); font-weight: 400; }
+.grade .btn { min-width: 96px; text-align: center; }
+.grade .btn.suggest { border-color: var(--cinnabar); background: var(--cinnabar-soft); color: var(--cinnabar); }
+.grade .btn.suggest small { color: var(--cinnabar); }
+details.mini summary { cursor: pointer; color: var(--muted); font-size: .85rem; }
+details.mini select, .opts select { font: inherit; font-size: .85rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+.tone-word { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+.tone-zh { font-family: var(--font-cjk); font-size: clamp(2.6rem, 8vw, 3.6rem); line-height: 1.1; }
+.tone-en { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); }
+.tone-rows { display: grid; gap: 10px; }
+.tone-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tone-row .syl { font-family: var(--font-cjk); font-size: 1.6rem; width: 2.2rem; text-align: center; }
+.tone-btn { font: inherit; font-size: 1rem; min-width: 56px; padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-variant-numeric: tabular-nums; }
+.tone-btn small { display: block; font-size: .7rem; color: var(--muted); }
+.tone-btn[aria-pressed="true"] { border-color: var(--ink); background: var(--paper); font-weight: 600; }
+.tone-btn.right { border-color: var(--jade); background: var(--jade-soft); color: var(--jade); }
+.tone-btn.wrong { border-color: var(--cinnabar); background: var(--cinnabar-soft); color: var(--cinnabar); text-decoration: line-through; }
+.tone-btn:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+.t1 { color: var(--t1); } .t2 { color: var(--t2); } .t3 { color: var(--t3); } .t4 { color: var(--t4); } .t5 { color: var(--muted); }
+.py-colored { font-size: 1.4rem; font-weight: 600; letter-spacing: .02em; }
+fieldset.opts { border: none; padding: 0; margin: 0; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.opts legend { margin-bottom: 6px; width: 100%; }
+.view-wrap { display: grid; gap: 20px; }
+.label .muted-q { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: .8rem; }
+.ph-list .zh { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 9em; }
+.ph-list button { grid-template-columns: minmax(0,auto) minmax(0,1fr); }
+.ph-zh { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end; }
+.ph-char { font-family: var(--font-cjk); font-size: clamp(2rem, 5vw, 2.6rem); line-height: 1.15; padding: 2px 6px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--ink); cursor: pointer; }
+.ph-char:hover { border-color: var(--line); background: var(--paper); }
+.ph-char[aria-pressed="true"] { border-color: var(--cinnabar); background: var(--cinnabar-soft); color: var(--cinnabar); }
+.ph-char:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+.ph-punct { font-family: var(--font-cjk); font-size: clamp(2rem, 5vw, 2.6rem); line-height: 1.15; color: var(--muted); padding: 2px 0; }
+.ph-panel { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+.ph-panel-main { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.ph-panel-side { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ph-panel-zh { font-family: var(--font-cjk); font-size: 2rem; line-height: 1; }
+.ph-panel-py { font-size: 1.1rem; font-weight: 500; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -163,7 +219,211 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     <p>Erst Deutsch, dann Pinyin, dann jeden Strich ansehen und nachziehen.</p>
   </header>
 
-  <div class="main">
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button class="tab" type="button" role="tab" id="tab-learn" data-view="learn" aria-selected="true">Lernen</button>
+    <button class="tab" type="button" role="tab" id="tab-phrases" data-view="phrases" aria-selected="false">Phrasen</button>
+    <button class="tab" type="button" role="tab" id="tab-review" data-view="review" aria-selected="false">Wiederholen <span class="pill" id="dueBadge" hidden></span></button>
+    <button class="tab" type="button" role="tab" id="tab-tones" data-view="tones" aria-selected="false">Töne</button>
+    <button class="tab" type="button" role="tab" id="tab-pdf" data-view="pdf" aria-selected="false">Goodnotes-PDF</button>
+  </nav>
+
+  <!-- Phrasen -->
+  <div class="view-wrap" id="phraseView" hidden>
+    <div class="main">
+      <aside class="rail">
+        <div class="rail-head">
+          <span class="label">Phrasen</span>
+          <span class="badge" id="phExampleBadge" hidden>Beispiele</span>
+        </div>
+        <ul class="list ph-list" id="phList"></ul>
+      </aside>
+
+      <section class="card" aria-live="polite">
+        <div class="top">
+          <span class="count" id="phCount"></span>
+          <div class="controls">
+            <button class="btn" id="phPrev" type="button" aria-label="Vorherige Phrase">← Zurück</button>
+            <button class="btn" id="phNext" type="button" aria-label="Nächste Phrase">Weiter →</button>
+            <button class="btn" id="phTest" type="button" aria-pressed="false">Abfragen</button>
+            <button class="btn" id="phEditBtn" type="button" aria-expanded="false" aria-controls="phEditForm">Bearbeiten</button>
+            <button class="btn" id="phDel" type="button">Löschen</button>
+          </div>
+        </div>
+
+        <form class="edit" id="phEditForm" hidden>
+          <span class="label">Phrase bearbeiten</span>
+          <div class="row3 edit-row">
+            <label class="f" for="phEditEn">Deutsch<input type="text" id="phEditEn" autocomplete="off"></label>
+            <label class="f" for="phEditPy">Pinyin<input type="text" id="phEditPy" autocomplete="off"></label>
+            <label class="f" for="phEditZh">Schriftzeichen<input type="text" id="phEditZh" autocomplete="off" lang="zh-CN"></label>
+          </div>
+          <div class="add-actions">
+            <button class="btn primary" type="submit">Speichern</button>
+            <button class="btn" type="button" id="phEditAutoPy">Pinyin neu erzeugen</button>
+            <button class="btn" type="button" id="phEditCancel">Abbrechen</button>
+          </div>
+        </form>
+
+        <div class="field">
+          <span class="label">Deutsch</span>
+          <p class="english" id="phEn"></p>
+        </div>
+        <div class="field">
+          <span class="label">Pinyin</span>
+          <div class="py-row">
+            <p class="pinyin" id="phPy"></p>
+            <button class="reveal" id="phRevealPy" type="button" hidden>Pinyin zeigen</button>
+            <button class="say" id="phSay" type="button" aria-label="Phrase anhören"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>Anhören</button>
+            <label class="slow" for="phSlow"><input type="checkbox" id="phSlow"> Langsam</label>
+          </div>
+          <p class="src" id="phSrc"></p>
+        </div>
+        <div class="field">
+          <span class="label">Schriftzeichen <span class="muted-q">– tippe auf ein Zeichen für die Strichfolge</span></span>
+          <div class="ph-zh" id="phZh"></div>
+          <button class="reveal" id="phRevealZh" type="button" hidden>Schriftzeichen zeigen</button>
+        </div>
+        <p class="status" id="phStatus"></p>
+
+        <div class="ph-panel" id="phPanel" hidden>
+          <div class="ph-panel-main">
+            <div class="box" id="phBox"></div>
+            <div class="ph-panel-side">
+              <span class="ph-panel-zh" id="phPanelZh"></span>
+              <span class="ph-panel-py" id="phPanelPy"></span>
+              <div class="controls">
+                <button class="btn primary" type="button" id="phCharPlay">▶ Abspielen</button>
+                <button class="btn" type="button" id="phCharQuiz">✎ Üben</button>
+                <button class="btn" type="button" id="phCharSay">🔊 Zeichen</button>
+                <button class="btn" type="button" id="phCharToVocab">Zu Vokabeln</button>
+              </div>
+            </div>
+          </div>
+          <div class="strips" id="phStrip"></div>
+        </div>
+      </section>
+    </div>
+
+    <details class="add" id="phAddPanel">
+      <summary>Eigene Phrasen hinzufügen</summary>
+      <div class="add-grid">
+        <form class="row3" id="phOneForm">
+          <label class="f" for="phEnIn">Deutsch<input type="text" id="phEnIn" placeholder="Wie viel kostet das?" autocomplete="off"></label>
+          <label class="f" for="phPyIn">Pinyin (leer lassen = automatisch)<input type="text" id="phPyIn" placeholder="zhège duōshao qián?" autocomplete="off"></label>
+          <label class="f" for="phZhIn">Schriftzeichen<input type="text" id="phZhIn" placeholder="这个多少钱？" autocomplete="off" lang="zh-CN"></label>
+          <button class="btn primary" type="submit">Hinzufügen</button>
+        </form>
+        <form class="add-grid" id="phBulkForm" style="margin-top:0">
+          <label class="f" for="phBulkIn">Liste einfügen, eine Phrase pro Zeile
+            <textarea id="phBulkIn" placeholder="Wie heißt du? | nǐ jiào shénme míngzi? | 你叫什么名字？&#10;Ich verstehe nicht. | 我听不懂。"></textarea>
+          </label>
+          <p class="hint">Gleiches Format wie bei den Vokabeln: <code>Deutsch | Pinyin | 汉字</code> oder <code>Deutsch | 汉字</code>. Satzzeichen wie ？ und 。 sind erlaubt.</p>
+          <div class="add-actions">
+            <button class="btn primary" type="submit">Liste hinzufügen</button>
+            <button class="btn" type="button" id="phExport">Phrasen exportieren</button>
+            <label class="btn file-btn" for="phImportIn">Datei importieren<input type="file" id="phImportIn" accept=".txt,.csv,.tsv,text/plain"></label>
+          </div>
+        </form>
+        <p class="status" id="phAddStatus"></p>
+        <p class="hint">Die Phrasen sind auch in der „Sicherung mit Lernstand“ bei den Vokabeln enthalten.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Wiederholen nach Plan -->
+  <section class="card view" id="reviewView" hidden>
+    <div class="top">
+      <span class="count" id="revCount"></span>
+      <div class="controls">
+        <button class="btn" type="button" id="revSay">🔊 Anhören (Hilfe)</button>
+        <button class="btn" type="button" id="revGiveUp">Weiß ich nicht</button>
+      </div>
+    </div>
+    <div id="revEmpty" class="empty" hidden>
+      <p class="english">Alles erledigt für heute.</p>
+      <p class="hint" id="revEmptyText"></p>
+    </div>
+    <div id="revBody">
+      <div class="field">
+        <span class="label">Deutsch</span>
+        <p class="english" id="revEn"></p>
+      </div>
+      <div class="field">
+        <span class="label">Pinyin</span>
+        <p class="pinyin" id="revPy"><span class="muted-q">Wird nach dem Schreiben gezeigt</span></p>
+      </div>
+      <div class="field">
+        <span class="label">Aus dem Gedächtnis schreiben</span>
+        <div class="chars" id="revChars"></div>
+      </div>
+      <p class="status" id="revStatus"></p>
+      <div class="grade" id="revGrade" hidden>
+        <span class="label">Wie gut wusstest du es?</span>
+        <div class="controls">
+          <button class="btn" type="button" data-grade="again">Nochmal <small id="ivAgain"></small></button>
+          <button class="btn" type="button" data-grade="hard">Schwer <small id="ivHard"></small></button>
+          <button class="btn" type="button" data-grade="good">Gut <small id="ivGood"></small></button>
+          <button class="btn" type="button" data-grade="easy">Leicht <small id="ivEasy"></small></button>
+        </div>
+      </div>
+    </div>
+    <details class="mini">
+      <summary>So funktioniert Wiederholen</summary>
+      <p class="hint">Du siehst das deutsche Wort und schreibst die Schriftzeichen ohne Vorlage. Nach zwei Fehlern im selben Strich blinkt ein Hinweis. Danach bewertest du dich, und die App plant das Wort neu: Was du gut kannst, kommt erst in Tagen oder Wochen wieder, was schwer war, schon morgen. Neue Wörter pro Tag:
+        <select id="newPerDay"><option>5</option><option>10</option><option selected>15</option><option>25</option><option>50</option></select>
+      </p>
+    </details>
+  </section>
+
+  <!-- Tontraining -->
+  <section class="card view" id="toneView" hidden>
+    <div class="top">
+      <span class="count" id="toneScore"></span>
+      <div class="controls">
+        <button class="btn" type="button" id="toneReplay">🔊 Nochmal anhören</button>
+        <label class="slow" for="toneSlow"><input type="checkbox" id="toneSlow"> Langsam</label>
+      </div>
+    </div>
+    <p class="hint">Hör genau hin und wähle für jede Silbe den Ton. Gefragt ist der Ton, wie er im Pinyin steht.</p>
+    <div class="tone-word">
+      <span class="tone-zh" id="toneZh"></span>
+      <span class="tone-en" id="toneEn"></span>
+    </div>
+    <div class="tone-rows" id="toneRows"></div>
+    <div class="controls">
+      <button class="btn primary" type="button" id="toneCheck">Prüfen</button>
+      <button class="btn" type="button" id="toneNext">Nächstes Wort →</button>
+    </div>
+    <p class="status" id="toneStatus"></p>
+    <p class="src" id="toneSrc"></p>
+  </section>
+
+  <!-- Goodnotes-PDF -->
+  <section class="card view" id="pdfView" hidden>
+    <div class="field">
+      <span class="label">Goodnotes-Blätter</span>
+      <p class="hint">Erstellt Übungsblätter im Stil deiner Vorlage: Deutsch und Pinyin ausgefüllt, die Strichfolge vorgedruckt, dazu ein Musterzeichen und blasse Zeichen zum Nachfahren.</p>
+    </div>
+    <fieldset class="opts">
+      <legend class="label">Welche Wörter?</legend>
+      <label class="slow" for="pdfCur"><input type="radio" name="pdfSel" id="pdfCur" value="current"> Aktuelles Wort</label>
+      <label class="slow" for="pdfDue"><input type="radio" name="pdfSel" id="pdfDue" value="due"> <span id="pdfDueLabel">Heute fällige Wörter</span></label>
+      <label class="slow" for="pdfAll"><input type="radio" name="pdfSel" id="pdfAll" value="all" checked> <span id="pdfAllLabel">Alle Wörter</span></label>
+    </fieldset>
+    <div class="opts">
+      <label class="slow" for="pdfTrace">Zeichen zum Nachfahren
+        <select id="pdfTrace"><option value="0">keine</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="5">5</option></select>
+      </label>
+      <label class="slow" for="pdfStrokes"><input type="checkbox" id="pdfStrokes" checked> Strichfolge vordrucken</label>
+    </div>
+    <div class="controls">
+      <button class="btn primary" type="button" id="pdfMake">PDF erstellen</button>
+    </div>
+    <p class="status" id="pdfStatus"></p>
+    <p class="hint">Am iPad öffnet sich danach das Teilen-Menü. Wähle dort <b>Goodnotes</b> und dann „Als neues Dokument importieren“, oder sichere die Datei in „Dateien“.</p>
+  </section>
+
+  <div class="main" id="learnView">
     <aside class="rail">
       <div class="rail-head">
         <span class="label">Vokabeln</span>
@@ -179,9 +439,25 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
           <button class="btn" id="prevBtn" type="button" aria-label="Vorheriges Wort">← Zurück</button>
           <button class="btn" id="nextBtn" type="button" aria-label="Nächstes Wort">Weiter →</button>
           <button class="btn" id="testBtn" type="button" aria-pressed="false">Abfragen</button>
+          <button class="btn" id="editBtn" type="button" aria-expanded="false" aria-controls="editForm">Bearbeiten</button>
           <button class="btn" id="delBtn" type="button">Wort löschen</button>
         </div>
       </div>
+
+      <form class="edit" id="editForm" hidden>
+        <span class="label">Wort bearbeiten</span>
+        <div class="row3 edit-row">
+          <label class="f" for="editEn">Deutsch<input type="text" id="editEn" autocomplete="off"></label>
+          <label class="f" for="editPy">Pinyin<input type="text" id="editPy" autocomplete="off"></label>
+          <label class="f" for="editZh">Schriftzeichen<input type="text" id="editZh" autocomplete="off" lang="zh-CN"></label>
+        </div>
+        <div class="add-actions">
+          <button class="btn primary" type="submit">Speichern</button>
+          <button class="btn" type="button" id="editAutoPy">Pinyin neu erzeugen</button>
+          <button class="btn" type="button" id="editCancel">Abbrechen</button>
+        </div>
+        <p class="status" id="editStatus"></p>
+      </form>
 
       <div class="field">
         <span class="label">Deutsch</span>
@@ -208,7 +484,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
 
       <div class="controls">
         <button class="btn primary" id="playBtn" type="button">▶ Abspielen</button>
-        <button class="btn" id="loopBtn" type="button" aria-pressed="false">Wiederholen</button>
+        <button class="btn" id="loopBtn" type="button" aria-pressed="false">Schleife</button>
         <button class="btn" id="quizBtn" type="button">✎ Üben</button>
         <label class="speed" for="speed">Tempo <input id="speed" type="range" min="0.3" max="2.5" step="0.1" value="1"></label>
       </div>
@@ -243,9 +519,10 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       <p class="status" id="addStatus"></p>
       <div class="backup">
         <h3>Liste sichern und importieren</h3>
-        <p class="hint">Der Export speichert alle Wörter als Textdatei (<code>Deutsch | Pinyin | 汉字</code>). Diese Datei kannst du später hier wieder importieren, auf einem anderen Gerät öffnen oder bearbeiten.</p>
+        <p class="hint">Der Export speichert alle Wörter als Textdatei (<code>Deutsch | Pinyin | 汉字</code>). Diese Datei kannst du später hier wieder importieren, auf einem anderen Gerät öffnen oder bearbeiten. Die <b>Sicherung mit Lernstand</b> enthält zusätzlich, wann welches Wort wieder dran ist, und deine Tontraining-Ergebnisse.</p>
         <div class="add-actions">
           <button class="btn primary" type="button" id="exportBtn">Liste exportieren</button>
+          <button class="btn" type="button" id="exportJsonBtn">Sicherung mit Lernstand</button>
           <button class="btn" type="button" id="copyBtn">Als Text kopieren</button>
           <label class="btn file-btn" for="importIn">Datei importieren<input type="file" id="importIn" accept=".txt,.csv,.tsv,.json,text/plain,application/json"></label>
           <label class="slow" for="importReplace"><input type="checkbox" id="importReplace"> Aktuelle Liste beim Import ersetzen</label>
@@ -258,7 +535,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       </div>
     </div>
   </details>
-  <p class="hint" style="text-align:center">Version 1.9 · 5. Nov 2026</p>
+  <p class="hint" style="text-align:center">Version 2.2 · 5. Nov 2026</p>
 </div>
 
 <script src="lib/hanzi-writer.min.js"></script>
@@ -276,7 +553,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     { en: "Liebe; lieben", py: "ài", zh: "爱" }
   ];
   const KEY = "hanzi-trainer-v1";
-  const APP_VERSION = "1.9 · 5. Nov 2026";
+  const APP_VERSION = "2.2 · 5. Nov 2026";
   const $ = (id) => document.getElementById(id);
   const isHan = (c) => /\p{Script=Han}/u.test(c);
 
@@ -390,6 +667,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     if (!chars.length) wrap.innerHTML = '<p class="hint">Dieser Eintrag enthält keine chinesischen Schriftzeichen.</p>';
     renderList();
     save();
+    try { updateDueBadge(); } catch (e) {}
   }
 
   function buildStrip(block, d) {
@@ -500,8 +778,8 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   function speakTTS(text) {
     if (!("speechSynthesis" in window)) { setStatus("Dieses Gerät unterstützt keine Sprachausgabe.", "bad"); return; }
     if (!zhVoice) pickVoice();
-    const han = [...text].filter(isHan).join("");
-    if (!han) return;
+    const han = [...text].filter(c => isHan(c) || /[，。？！、；：…,.?!;:]/.test(c)).join("");
+    if (![...han].some(isHan)) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(han);
@@ -612,8 +890,12 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   function stopAudio() { playToken++; try { player.pause(); } catch (e) {} try { if (webSrc) { webSrc.stop(); webSrc = null; } } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} }
 
   function showSource(word, rec, list) {
-    const el = $("audioSrc"); el.innerHTML = "";
-    if (word !== state.words[state.idx].zh) return;   // only describe the main word
+    let el = null;
+    if (view === "tones" && tone.word && hanOf(tone.word.zh) === word) el = $("toneSrc");
+    else if (view === "learn" && word === hanOf(state.words[state.idx].zh)) el = $("audioSrc");
+    else if (view === "phrases" && ph.cur && word === hanOf(ph.cur.zh)) el = $("phSrc");
+    if (!el) return;
+    el.innerHTML = "";
     if (rec) {
       const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "Echte Aufnahme"; el.appendChild(tag);
       const t = document.createElement("span"); t.textContent = "Sprecher: " + rec.user + " · " + rec.license + " · "; el.appendChild(t);
@@ -635,11 +917,11 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     unlockPlayer();
     stopAudio();
     const my = playToken;
-    if (state.real === false) { showSource(word, null); speakTTS(word); return; }
+    if (state.real === false) { showSource(word, null); speakTTS(text); return; }
     let entry = audioIndex[word];
     const stale = entry && entry.none && (Date.now() - entry.ts > RETRY_MS);
     if (!entry || stale) {
-      if (!navigator.onLine) { showSource(word, null); speakTTS(word); return; }
+      if (!navigator.onLine) { showSource(word, null); speakTTS(text); return; }
       if (word === state.words[state.idx].zh) $("audioSrc").textContent = "Suche echte Aufnahme…";
       try {
         const list = await findRecordings(word);
@@ -647,7 +929,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
         audioIndex[word] = entry; saveAudioIndex();
       } catch (e) { entry = null; }
     }
-    if (!entry || entry.none) { showSource(word, null); speakTTS(word); return; }
+    if (!entry || entry.none) { showSource(word, null); speakTTS(text); return; }
     const rate = state.slow ? 0.7 : 1;
     const why = [];
     let data = null, rec = null;
@@ -702,7 +984,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
 
     if (my !== playToken) return;
     setStatus("Aufnahme nicht abspielbar (" + why.join("; ") + "). Ersatz: Computerstimme. [App " + APP_VERSION + "]", "bad");
-    showSource(word, null); speakTTS(word);
+    showSource(word, null); speakTTS(text);
   }
 
   async function prefetchRecordings(words, onProgress) {
@@ -728,6 +1010,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
 
   function go(i) {
     if (!state.words.length) return;
+    try { closeEdit(); } catch (e) {}
     state.idx = (i + state.words.length) % state.words.length;
     revealPy = false; revealZh = false;
     renderCard();
@@ -770,6 +1053,44 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   $("testBtn").addEventListener("click", () => { state.test = !state.test; revealPy = revealZh = false; renderCard(); });
   $("revealPy").addEventListener("click", () => { revealPy = true; $("pinyin").hidden = false; $("revealPy").hidden = true; });
   $("revealZh").addEventListener("click", () => { revealZh = true; cancelAll(); $("card").classList.remove("hidden-chars"); $("charField").classList.remove("hidden-chars"); $("revealZh").hidden = true; writers.forEach(({ writer }) => { writer.showOutline(); writer.showCharacter(); }); renderList(); if (state.auto) speak(state.words[state.idx].zh); });
+
+  // ---- edit the current word in place ----
+  function openEdit() {
+    const w = state.words[state.idx];
+    $("editEn").value = w.en || ""; $("editPy").value = w.py || ""; $("editZh").value = w.zh || "";
+    $("editStatus").textContent = ""; $("editStatus").className = "status";
+    $("editForm").hidden = false; $("editBtn").setAttribute("aria-expanded", "true");
+    $("editEn").focus();
+  }
+  function closeEdit() { $("editForm").hidden = true; $("editBtn").setAttribute("aria-expanded", "false"); }
+  $("editBtn").addEventListener("click", () => { $("editForm").hidden ? openEdit() : closeEdit(); });
+  $("editCancel").addEventListener("click", closeEdit);
+  $("editAutoPy").addEventListener("click", () => {
+    const zh = $("editZh").value.trim();
+    if (![...zh].some(isHan)) { $("editStatus").textContent = "Gib zuerst Schriftzeichen ein."; $("editStatus").className = "status bad"; return; }
+    $("editPy").value = autoPinyin(zh);
+  });
+  $("editForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const w = state.words[state.idx];
+    const en = $("editEn").value.trim(), zh = $("editZh").value.trim();
+    let py = $("editPy").value.trim();
+    const st = $("editStatus");
+    if (![...zh].some(isHan)) { st.textContent = "Das Feld Schriftzeichen braucht mindestens ein chinesisches Zeichen."; st.className = "status bad"; return; }
+    const oldKey = hanOf(w.zh), newKey = hanOf(zh);
+    if (!py || (newKey !== oldKey && py === w.py)) py = autoPinyin(zh);   // characters changed: old pinyin no longer fits
+    if (newKey !== oldKey) {
+      // different characters = a different word to learn: its plan starts fresh,
+      // the old plan is removed unless another entry still uses those characters
+      const stillUsed = state.words.some((x, i) => i !== state.idx && hanOf(x.zh) === oldKey);
+      if (!stillUsed) { if (state.srs) delete state.srs[oldKey]; if (state.toneMiss) delete state.toneMiss[oldKey]; }
+    }
+    state.words[state.idx] = { en, py, zh };
+    state.examples = false;
+    closeEdit();
+    renderCard();
+    setStatus("Gespeichert" + (newKey !== oldKey ? ". Neue Schriftzeichen werden im Wiederholen-Plan wie ein neues Wort behandelt." : "."), "good");
+  });
   $("delBtn").addEventListener("click", () => {
     if (state.words.length <= 1) { setStatus("Mindestens ein Wort muss bleiben. Füge unten neue Wörter hinzu und lösche dann dieses.", "bad"); return; }
     state.words.splice(state.idx, 1);
@@ -882,6 +1203,16 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       const t = raw.trim();
       if (t.startsWith("[") || t.startsWith("{")) {
         const j = JSON.parse(t); const arr = Array.isArray(j) ? j : (j.words || []);
+        if (j && !Array.isArray(j)) {
+          if (j.srs && typeof j.srs === "object") { state.srs = Object.assign(state.srs || {}, j.srs); }
+          if (j.toneStats) state.toneStats = j.toneStats;
+          if (j.toneMiss) state.toneMiss = Object.assign(state.toneMiss || {}, j.toneMiss);
+          if (Array.isArray(j.phrases) && j.phrases.length) {
+            if (state.phExamples) { state.phrases = []; state.phExamples = false; }
+            const have = new Set(state.phrases.map(x => x.zh));
+            j.phrases.forEach(x => { if (x && typeof x.zh === "string" && !have.has(x.zh)) { state.phrases.push({ en: String(x.en || ""), py: String(x.py || ""), zh: x.zh }); have.add(x.zh); } });
+          }
+        }
         words = arr.filter(w => w && typeof w.zh === "string" && [...w.zh].some(isHan))
           .map(w => ({ en: String(w.en || ""), py: String(w.py || "") || autoPinyin(w.zh), zh: w.zh }));
       } else {
@@ -891,6 +1222,711 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       addWords(words, $("importReplace").checked);
       backupStatus(words.length + (words.length === 1 ? " Wort" : " Wörter") + " aus " + f.name + " importiert.", "good");
     } catch (err) { backupStatus("Die Datei konnte nicht gelesen werden. Erwartet wird eine Textdatei mit Zeilen wie „lernen | xuéxí | 学习“.", "bad"); }
+    e.target.value = "";
+  });
+
+
+  // =====================================================================
+  //  Views (Lernen / Wiederholen / Töne / Goodnotes-PDF)
+  // =====================================================================
+  const VIEWS = { learn: "learnView", phrases: "phraseView", review: "reviewView", tones: "toneView", pdf: "pdfView" };
+  let view = "learn";
+  function showView(v) {
+    if (!VIEWS[v]) v = "learn";
+    view = v;
+    stopAudio(); cancelAll(); cancelReviewQuiz();
+    Object.entries(VIEWS).forEach(([k, id]) => { $(id).hidden = k !== v; });
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v ? "true" : "false"));
+    $("addPanel").hidden = v === "phrases";
+    if (v === "learn") renderCard();
+    if (v === "phrases") renderPhrase();
+    if (v === "review") startReview();
+    if (v === "tones") startTones();
+    if (v === "pdf") preparePdfView();
+    if (location.hash !== "#" + v) { try { history.replaceState(null, "", v === "learn" ? location.pathname + location.search : "#" + v); } catch (e) {} }
+  }
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => showView(t.dataset.view)));
+  window.addEventListener("hashchange", () => showView(location.hash.slice(1)));
+
+  const hanOf = (zh) => [...zh].filter(isHan).join("");
+  const DAY = 24 * 3600 * 1000;
+  const todayKey = () => { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); };
+  const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  function fmtIvl(days) {
+    if (days <= 0) return "gleich";
+    if (days === 1) return "morgen";
+    if (days < 30) return "in " + days + " Tagen";
+    const m = Math.round(days / 30);
+    return m <= 1 ? "in 1 Monat" : "in " + m + " Monaten";
+  }
+
+  // =====================================================================
+  //  Wiederholen nach Plan (vereinfachtes SM-2)
+  // =====================================================================
+  if (!state.srs || typeof state.srs !== "object") state.srs = {};
+  if (!state.newPerDay) state.newPerDay = 15;
+  function srsLog() {
+    if (!state.srsDay || state.srsDay.date !== todayKey()) state.srsDay = { date: todayKey(), newDone: 0, reviewed: 0 };
+    return state.srsDay;
+  }
+  function itemOf(zh) { return state.srs[hanOf(zh)] || null; }
+  function nextIntervals(it) {
+    const ivl = it ? it.ivl : 0, ease = it ? it.ease : 2.5, reps = it ? it.reps : 0;
+    const good = reps === 0 ? 1 : reps === 1 ? 3 : Math.max(ivl + 1, Math.round(ivl * ease));
+    return {
+      again: 0,
+      hard: Math.max(1, Math.round(Math.max(ivl, 1) * 1.2)),
+      good,
+      easy: Math.max(good + 1, reps === 0 ? 4 : Math.round(good * 1.3))
+    };
+  }
+  function applyGrade(zh, grade) {
+    const key = hanOf(zh); const now = Date.now();
+    const it = state.srs[key] || { reps: 0, ivl: 0, ease: 2.5, due: now, lapses: 0, added: now };
+    const wasNew = !state.srs[key] || !state.srs[key].seen;
+    const iv = nextIntervals(it);
+    if (grade === "again") { it.reps = 0; it.ivl = 0; it.ease = Math.max(1.3, it.ease - 0.2); it.lapses = (it.lapses || 0) + 1; it.due = now + 60 * 1000; }
+    else {
+      const days = iv[grade];
+      if (grade === "hard") it.ease = Math.max(1.3, it.ease - 0.15);
+      if (grade === "easy") it.ease = Math.min(3.2, it.ease + 0.15);
+      it.ivl = days; it.reps += 1; it.due = startOfDay(now) + days * DAY;
+    }
+    it.seen = true; it.last = now;
+    state.srs[key] = it;
+    const log = srsLog();
+    if (wasNew) log.newDone += 1; else log.reviewed += 1;
+    save(); updateDueBadge();
+  }
+  function dueQueue() {
+    const now = Date.now(), log = srsLog();
+    const seen = new Set(), reviews = [], fresh = [];
+    state.words.forEach(w => {
+      const key = hanOf(w.zh); if (!key || seen.has(key)) return; seen.add(key);
+      const it = state.srs[key];
+      if (it && it.seen) { if (it.due <= now) reviews.push(w); }
+      else fresh.push(w);
+    });
+    reviews.sort((a, b) => state.srs[hanOf(a.zh)].due - state.srs[hanOf(b.zh)].due);
+    const freshLeft = Math.max(0, state.newPerDay - log.newDone);
+    return { reviews, fresh: fresh.slice(0, freshLeft), freshTotal: fresh.length };
+  }
+  function updateDueBadge() {
+    if (state.examples) { $("dueBadge").hidden = true; return; }
+    const q = dueQueue(); const n = q.reviews.length + q.fresh.length;
+    $("dueBadge").textContent = n; $("dueBadge").hidden = n === 0;
+  }
+
+  let rev = { queue: [], cur: null, writers: [], mistakes: 0, done: false, token: 0 };
+  function cancelReviewQuiz() { rev.token++; rev.writers.forEach(w => { try { w.cancelQuiz(); } catch (e) {} }); }
+  function revStatus(msg, kind) { const s = $("revStatus"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+
+  function startReview() {
+    const q = dueQueue();
+    rev.queue = q.reviews.concat(q.fresh);
+    nextReview();
+  }
+  function nextReview() {
+    cancelReviewQuiz(); stopAudio();
+    const now = Date.now();
+    // words graded "Nochmal" come back once their minute is up, or when nothing else is left
+    rev.queue.sort((a, b) => ((itemOf(a.zh) && itemOf(a.zh).seen ? itemOf(a.zh).due : 0) - (itemOf(b.zh) && itemOf(b.zh).seen ? itemOf(b.zh).due : 0)));
+    const next = rev.queue.shift();
+    const total = rev.queue.length + (next ? 1 : 0);
+    if (!next) {
+      $("revBody").hidden = true; $("revEmpty").hidden = false;
+      $("revSay").hidden = $("revGiveUp").hidden = true;
+      const q = dueQueue(); const log = srsLog();
+      let soon = null;
+      Object.values(state.srs).forEach(it => { if (it.seen && it.due > now && (soon === null || it.due < soon)) soon = it.due; });
+      $("revCount").textContent = "Heute: " + (log.newDone + log.reviewed) + " wiederholt";
+      $("revEmptyText").textContent = state.examples
+        ? "Füge zuerst eigene Wörter hinzu. Die Beispielliste wird nicht eingeplant."
+        : (q.freshTotal > 0 ? "Dein Tageslimit für neue Wörter ist erreicht (" + state.newPerDay + "). Noch " + q.freshTotal + " neue Wörter warten. " : "")
+          + (soon ? "Nächste Wiederholung: " + new Date(soon).toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" }) + "." : "");
+      updateDueBadge();
+      return;
+    }
+    rev.cur = next; rev.mistakes = 0; rev.done = false;
+    $("revBody").hidden = false; $("revEmpty").hidden = true;
+    $("revSay").hidden = $("revGiveUp").hidden = false;
+    $("revCount").textContent = total + " offen · heute " + (srsLog().newDone + srsLog().reviewed) + " geschafft";
+    $("revEn").textContent = next.en || "—";
+    $("revPy").innerHTML = '<span class="muted-q">Wird nach dem Schreiben gezeigt</span>';
+    $("revGrade").hidden = true;
+    const it = itemOf(next.zh);
+    revStatus(it && it.seen ? "Schreib die Schriftzeichen aus dem Gedächtnis." : "Neues Wort. Schreib es aus dem Gedächtnis, oder tippe „Weiß ich nicht“, um es zu sehen.");
+    buildReviewWriters(next);
+  }
+  function buildReviewWriters(w) {
+    const wrap = $("revChars"); wrap.innerHTML = "";
+    rev.writers = [];
+    const chars = [...w.zh].filter(isHan);
+    const avail = wrap.clientWidth || 600;
+    const size = Math.max(110, Math.min(220, Math.floor((avail - 14 * (chars.length - 1)) / Math.max(1, chars.length))));
+    const col = colors();
+    chars.forEach(ch => {
+      const box = document.createElement("div"); box.className = "box"; box.style.setProperty("--size", size + "px");
+      box.innerHTML = gridSvg() + '<div class="hw"></div>'; wrap.appendChild(box);
+      if (!window.HanziWriter) return;
+      const writer = HanziWriter.create(box.querySelector(".hw"), ch, Object.assign({
+        width: size, height: size, padding: Math.round(size * 0.06), showCharacter: false, showOutline: false,
+        strokeAnimationSpeed: state.speed, delayBetweenStrokes: 200,
+        charDataLoader: (c, ok, err) => getData(c).then(d => d ? ok(d) : err(new Error("none"))).catch(err)
+      }, col));
+      rev.writers.push(writer);
+    });
+    const my = ++rev.token;
+    let i = 0;
+    const next = () => {
+      if (my !== rev.token) return;
+      if (i >= rev.writers.length) { finishReview(false); return; }
+      const wr = rev.writers[i];
+      wr.quiz({
+        showHintAfterMisses: 2,
+        onMistake: () => { rev.mistakes++; },
+        onComplete: () => { i++; setTimeout(next, 250); }
+      });
+    };
+    next();
+  }
+  function finishReview(gaveUp) {
+    if (rev.done) return;
+    rev.done = true; cancelReviewQuiz();
+    const w = rev.cur;
+    rev.writers.forEach(wr => { try { wr.showOutline(); wr.showCharacter(); } catch (e) {} });
+    $("revPy").textContent = w.py;
+    speak(w.zh);
+    const suggest = gaveUp ? "again" : rev.mistakes === 0 ? "good" : rev.mistakes <= 2 ? "hard" : "again";
+    revStatus(gaveUp ? "Präg es dir ein. Das Wort kommt gleich noch einmal." :
+      rev.mistakes === 0 ? "Fehlerfrei geschrieben." : rev.mistakes + (rev.mistakes === 1 ? " Fehler." : " Fehler."), gaveUp || suggest === "again" ? "bad" : "good");
+    const iv = nextIntervals(itemOf(w.zh));
+    $("ivAgain").textContent = fmtIvl(0); $("ivHard").textContent = fmtIvl(iv.hard);
+    $("ivGood").textContent = fmtIvl(iv.good); $("ivEasy").textContent = fmtIvl(iv.easy);
+    document.querySelectorAll("#revGrade [data-grade]").forEach(b => b.classList.toggle("suggest", b.dataset.grade === suggest));
+    $("revGrade").hidden = false;
+    if (gaveUp) rev.writers.forEach(wr => { try { wr.hideCharacter(); wr.animateCharacter(); } catch (e) {} });
+  }
+  document.querySelectorAll("#revGrade [data-grade]").forEach(b => b.addEventListener("click", () => {
+    if (!rev.cur) return;
+    const g = b.dataset.grade;
+    applyGrade(rev.cur.zh, g);
+    if (g === "again") rev.queue.push(rev.cur);
+    nextReview();
+  }));
+  $("revGiveUp").addEventListener("click", () => finishReview(true));
+  $("revSay").addEventListener("click", () => { if (rev.cur) speak(rev.cur.zh); });
+  $("newPerDay").value = String(state.newPerDay);
+  $("newPerDay").addEventListener("change", (e) => { state.newPerDay = parseInt(e.target.value, 10) || 15; save(); updateDueBadge(); if (view === "review") startReview(); });
+
+  // =====================================================================
+  //  Tontraining
+  // =====================================================================
+  if (!state.toneStats) state.toneStats = { right: 0, total: 0 };
+  if (!state.toneMiss) state.toneMiss = {};
+  const MARKS = { 1: "āēīōūǖĀĒĪŌŪǕ", 2: "áéíóúǘÁÉÍÓÚǗ", 3: "ǎěǐǒǔǚǍĚǏǑǓǙ", 4: "àèìòùǜÀÈÌÒÙǛ" };
+  function toneOfSyl(syl) {
+    const d = syl.match(/[1-5]$/); if (d) return +d[0];
+    for (const t of [1, 2, 3, 4]) if ([...syl].some(c => MARKS[t].includes(c))) return t;
+    return 5;
+  }
+  const baseOf = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[1-5]/g, "").toLowerCase();
+  function syllables(w) {
+    const han = [...w.zh].filter(isHan);
+    let ref = [];
+    try { ref = pinyinPro.pinyin(han.join(""), { type: "array" }); } catch (e) {}
+    const given = (w.py || "").replace(/[,.?!;:…"“”„«»()，。？！、；：]/g, " ").trim();
+    let parts = given.split(/[\s'’\-]+/).filter(Boolean);
+    if (parts.length !== han.length && ref.length === han.length) {
+      // split run-together pinyin ("xuéxí") along the syllable lengths from the dictionary
+      const flat = [...given.replace(/[\s'’\-]+/g, "").normalize("NFC")];
+      const out = []; let pos = 0, ok = true;
+      for (const r of ref) {
+        const want = baseOf(r).replace("ü", "u"); let got = "";
+        const start = pos;
+        while (pos < flat.length && baseOf(got + flat[pos]).replace("ü", "u").length <= want.length && want.startsWith(baseOf(got + flat[pos]).replace("ü", "u"))) { got += flat[pos]; pos++; }
+        if (baseOf(got).replace("ü", "u") !== want) { ok = false; break; }
+        out.push(flat.slice(start, pos).join(""));
+      }
+      parts = ok && pos === flat.length ? out : ref;
+    }
+    if (parts.length !== han.length) parts = ref.length === han.length ? ref : han.map(() => "");
+    return han.map((ch, i) => ({ ch, py: parts[i] || "", tone: toneOfSyl(parts[i] || "") }));
+  }
+  function hasSandhi(syls, zh) {
+    for (let i = 0; i < syls.length - 1; i++) if (syls[i].tone === 3 && syls[i + 1].tone === 3) return "Zwei 3. Töne hintereinander: Der erste wird wie ein 2. Ton gesprochen.";
+    if (/不/.test(zh) && syls.some((s, i) => s.ch === "不" && syls[i + 1] && syls[i + 1].tone === 4)) return "不 vor einem 4. Ton wird wie bú (2. Ton) gesprochen.";
+    if (/一/.test(zh) && syls.length > 1) return "一 ändert seinen Ton je nach folgender Silbe (yí vor 4. Ton, yì sonst).";
+    return "";
+  }
+  let tone = { word: null, syls: [], picks: [], checked: false, last: null };
+  function toneScore() { const s = state.toneStats; $("toneScore").textContent = s.total ? s.right + " von " + s.total + " Silben richtig (" + Math.round(s.right / s.total * 100) + " %)" : "Noch keine Silben geübt"; }
+  function startTones() { $("toneSlow").checked = !!state.slow; toneScore(); if (!tone.word) nextTone(false); else renderTone(); }
+  function pickToneWord() {
+    const pool = state.words.filter(w => [...w.zh].some(isHan));
+    if (!pool.length) return null;
+    // words you got wrong before come up more often
+    const weights = pool.map(w => (w === tone.last && pool.length > 1 ? 0 : 1 + 2 * (state.toneMiss[hanOf(w.zh)] || 0)));
+    let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < pool.length; i++) { r -= weights[i]; if (r <= 0) return pool[i]; }
+    return pool[pool.length - 1];
+  }
+  function nextTone(play) {
+    tone.word = pickToneWord(); tone.last = tone.word;
+    if (!tone.word) { $("toneStatus").textContent = "Füge zuerst Wörter hinzu."; return; }
+    tone.syls = syllables(tone.word); tone.picks = tone.syls.map(() => 0); tone.checked = false;
+    $("toneSrc").innerHTML = "";
+    renderTone();
+    if (play !== false) speakTone();
+  }
+  function speakTone() {
+    if (!tone.word) return;
+    speak(tone.word.zh);
+  }
+  const TONE_LABEL = { 1: ["1", "ā"], 2: ["2", "á"], 3: ["3", "ǎ"], 4: ["4", "à"], 5: ["neutral", "a"] };
+  function renderTone() {
+    const w = tone.word;
+    $("toneZh").textContent = w.zh; $("toneEn").textContent = w.en || "";
+    $("toneStatus").textContent = ""; $("toneStatus").className = "status";
+    const rows = $("toneRows"); rows.innerHTML = "";
+    tone.syls.forEach((s, i) => {
+      const row = document.createElement("div"); row.className = "tone-row";
+      const lab = document.createElement("span"); lab.className = "syl"; lab.textContent = s.ch; row.appendChild(lab);
+      [1, 2, 3, 4, 5].forEach(t => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "tone-btn";
+        b.innerHTML = TONE_LABEL[t][0] + "<small>" + TONE_LABEL[t][1] + "</small>";
+        b.setAttribute("aria-label", s.ch + ": " + (t === 5 ? "neutraler Ton" : t + ". Ton"));
+        b.setAttribute("aria-pressed", tone.picks[i] === t ? "true" : "false");
+        b.addEventListener("click", () => {
+          if (tone.checked) return;
+          tone.picks[i] = t;
+          row.querySelectorAll(".tone-btn").forEach((x, k) => x.setAttribute("aria-pressed", k + 1 === t ? "true" : "false"));
+        });
+        row.appendChild(b);
+      });
+      rows.appendChild(row);
+    });
+    $("toneCheck").disabled = false;
+  }
+  function checkTone() {
+    if (!tone.word || tone.checked) return;
+    if (tone.picks.some(p => !p)) { $("toneStatus").textContent = "Wähle für jede Silbe einen Ton."; $("toneStatus").className = "status bad"; return; }
+    tone.checked = true;
+    let right = 0;
+    $("toneRows").querySelectorAll(".tone-row").forEach((row, i) => {
+      const want = tone.syls[i].tone, got = tone.picks[i];
+      row.querySelectorAll(".tone-btn").forEach((b, k) => {
+        if (k + 1 === want) b.classList.add("right");
+        else if (k + 1 === got) b.classList.add("wrong");
+      });
+      if (want === got) right++;
+    });
+    const key = hanOf(tone.word.zh);
+    state.toneStats.right += right; state.toneStats.total += tone.syls.length;
+    if (right === tone.syls.length) state.toneMiss[key] = Math.max(0, (state.toneMiss[key] || 0) - 1);
+    else state.toneMiss[key] = (state.toneMiss[key] || 0) + 1;
+    save(); toneScore();
+    const py = tone.syls.map(s => '<span class="t' + s.tone + '">' + (s.py || "?").replace(/[<>&]/g, "") + "</span>").join(" ");
+    const sandhi = hasSandhi(tone.syls, tone.word.zh);
+    const st = $("toneStatus");
+    st.className = "status " + (right === tone.syls.length ? "good" : "bad");
+    st.innerHTML = (right === tone.syls.length ? "Alles richtig! " : right + " von " + tone.syls.length + " richtig. ") +
+      '<span class="py-colored">' + py + "</span>" + (sandhi ? '<br><span class="hint">' + sandhi + "</span>" : "");
+    $("toneCheck").disabled = true;
+  }
+  $("toneCheck").addEventListener("click", checkTone);
+  $("toneNext").addEventListener("click", () => nextTone(true));
+  $("toneReplay").addEventListener("click", speakTone);
+  $("toneSlow").addEventListener("change", (e) => { state.slow = e.target.checked; $("slowIn").checked = state.slow; save(); });
+
+  // =====================================================================
+  //  Goodnotes-PDF
+  // =====================================================================
+  function preparePdfView() {
+    const q = dueQueue(); const nDue = q.reviews.length + q.fresh.length;
+    $("pdfDueLabel").textContent = "Heute fällige Wörter (" + nDue + ")";
+    $("pdfAllLabel").textContent = "Alle Wörter (" + state.words.length + ")";
+    $("pdfDue").disabled = nDue === 0;
+    if (nDue === 0 && $("pdfDue").checked) $("pdfAll").checked = true;
+  }
+  function loadScript(src) {
+    return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Konnte " + src + " nicht laden")); document.head.appendChild(s); });
+  }
+  async function fontBase64() {
+    const r = await fetch("lib/DejaVuSans-sub.ttf"); if (!r.ok) throw new Error("Schrift fehlt");
+    const bytes = new Uint8Array(await r.arrayBuffer()); let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  // draw one hanzi-writer stroke path (y-up, 1024 units) into a box at (bx,by) of size S
+  function drawStroke(doc, d, bx, by, S) {
+    const k = (S * 0.9) / 1024, ox = bx + S * 0.05, oy = by + S * 0.05;
+    const X = (x) => ox + x * k, Y = (y) => oy + (900 - y) * k;
+    const t = d.trim().split(/[\s,]+/); let i = 0, cx = 0, cy = 0, sx = 0, sy = 0;
+    while (i < t.length) {
+      const c = t[i++];
+      if (c === "M") { cx = +t[i++]; cy = +t[i++]; sx = cx; sy = cy; doc.moveTo(X(cx), Y(cy)); }
+      else if (c === "L") { cx = +t[i++]; cy = +t[i++]; doc.lineTo(X(cx), Y(cy)); }
+      else if (c === "Q") {
+        const qx = +t[i++], qy = +t[i++], x = +t[i++], y = +t[i++];
+        doc.curveTo(X(cx + 2 / 3 * (qx - cx)), Y(cy + 2 / 3 * (qy - cy)), X(x + 2 / 3 * (qx - x)), Y(y + 2 / 3 * (qy - y)), X(x), Y(y));
+        cx = x; cy = y;
+      }
+      else if (c === "C") {
+        const x1 = +t[i++], y1 = +t[i++], x2 = +t[i++], y2 = +t[i++], x = +t[i++], y = +t[i++];
+        doc.curveTo(X(x1), Y(y1), X(x2), Y(y2), X(x), Y(y)); cx = x; cy = y;
+      }
+      else if (c === "Z" || c === "z") { doc.close(); cx = sx; cy = sy; }
+      else break;   // unknown command: stop safely
+    }
+    doc.fill();
+  }
+  function drawGrid(doc, x, y, S, heavy) {
+    doc.setDrawColor(226, 196, 191); doc.setLineWidth(0.35); doc.setLineDashPattern([2, 2], 0);
+    doc.line(x + S / 2, y, x + S / 2, y + S); doc.line(x, y + S / 2, x + S, y + S / 2);
+    if (heavy) { doc.line(x, y, x + S, y + S); doc.line(x + S, y, x, y + S); }
+    doc.setLineDashPattern([], 0);
+  }
+  function drawChar(doc, data, x, y, S, upto, rgb, lastRgb) {
+    if (!data) return;
+    const n = upto == null ? data.strokes.length : upto;
+    for (let i = 0; i < n; i++) {
+      const c = (lastRgb && i === n - 1) ? lastRgb : rgb;
+      doc.setFillColor(c[0], c[1], c[2]);
+      drawStroke(doc, data.strokes[i], x, y, S);
+    }
+  }
+  async function makePdf() {
+    const st = $("pdfStatus"); const set = (m, k) => { st.textContent = m; st.className = "status" + (k ? " " + k : ""); };
+    const sel = (document.querySelector('input[name="pdfSel"]:checked') || {}).value || "all";
+    let words = sel === "current" ? [state.words[state.idx]] : sel === "due" ? (() => { const q = dueQueue(); return q.reviews.concat(q.fresh); })() : state.words.slice();
+    words = words.filter(w => w && [...w.zh].some(isHan));
+    if (!words.length) { set("Keine Wörter für diese Auswahl.", "bad"); return; }
+    const traceN = parseInt($("pdfTrace").value, 10) || 0;
+    const withStrokes = $("pdfStrokes").checked;
+    $("pdfMake").disabled = true;
+    try {
+      set("Bereite vor…");
+      if (!window.jspdf) await loadScript("lib/jspdf.umd.min.js");
+      const b64 = await fontBase64();
+      const chars = [...new Set(words.flatMap(w => [...w.zh].filter(isHan)))];
+      const data = {};
+      for (let i = 0; i < chars.length; i++) { data[chars[i]] = await getData(chars[i]).catch(() => null); if (i % 20 === 0) set("Lade Strichdaten… " + Math.round(i / chars.length * 100) + " %"); }
+
+      const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+      doc.addFileToVFS("DejaVuSans.ttf", b64); doc.addFont("DejaVuSans.ttf", "DejaVu", "normal"); doc.setFont("DejaVu", "normal");
+      const W = 595.28, H = 841.89, M = 34, usable = W - 2 * M;
+      const big = usable / 10, small = usable / 20;
+      const RED = [192, 57, 43], INK = [34, 34, 34], TRACE = [208, 208, 204], MUTED = [120, 120, 115];
+      let page = 1, y = 0;
+      const dateStr = new Date().toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric" });
+      const header = () => {
+        doc.setFillColor(255, 253, 248); doc.rect(0, 0, W, H, "F");
+        doc.setTextColor(...RED); doc.setFontSize(15); doc.text("Chinesische Schriftzeichen", M, M + 10);
+        doc.setTextColor(...MUTED); doc.setFontSize(8.5); doc.text(dateStr + "  ·  Seite " + page, W - M, M + 10, { align: "right" });
+        doc.setDrawColor(...RED); doc.setLineWidth(1.2); doc.line(M, M + 18, W - M, M + 18);
+        y = M + 32;
+      };
+      const entryHeight = (w) => {
+        let h = 34;
+        [...w.zh].filter(isHan).forEach(ch => {
+          const n = data[ch] ? data[ch].strokes.length : 0;
+          if (withStrokes && n) h += Math.ceil(n / 20) * small + 6;
+          h += big + 8;
+        });
+        return h + 8;
+      };
+      header();
+      for (let wi = 0; wi < words.length; wi++) {
+        const w = words[wi];
+        const h = entryHeight(w);
+        if (y + h > H - M && y > M + 40) { doc.addPage(); page++; header(); }
+        // labels and filled-in text
+        doc.setTextColor(...RED); doc.setFontSize(6.5);
+        doc.text("DEUTSCH", M, y); doc.text("PINYIN", M + usable / 2 + 8, y);
+        doc.setTextColor(...INK); doc.setFontSize(12);
+        doc.text(doc.splitTextToSize(w.en || "", usable / 2 - 16)[0] || "", M, y + 15);
+        doc.text(doc.splitTextToSize(w.py || "", usable / 2 - 16)[0] || "", M + usable / 2 + 8, y + 15);
+        doc.setDrawColor(185, 180, 170); doc.setLineWidth(0.5);
+        doc.line(M, y + 20, M + usable / 2 - 8, y + 20); doc.line(M + usable / 2 + 8, y + 20, W - M, y + 20);
+        y += 30;
+        for (const ch of [...w.zh].filter(isHan)) {
+          const d = data[ch];
+          if (withStrokes && d) {
+            const n = d.strokes.length, rows = Math.ceil(n / 20);
+            for (let k = 0; k < n; k++) {
+              const bx = M + (k % 20) * small, by = y + Math.floor(k / 20) * small;
+              drawGrid(doc, bx, by, small, false);
+              drawChar(doc, d, bx, by, small, k + 1, INK, RED);
+              doc.setTextColor(...MUTED); doc.setFontSize(4.5); doc.text(String(k + 1), bx + 1.5, by + 5);
+            }
+            doc.setDrawColor(...RED); doc.setLineWidth(0.5);
+            for (let r = 0; r < rows; r++) {
+              const cols = r === rows - 1 ? n - r * 20 : 20;
+              for (let c = 0; c < cols; c++) doc.rect(M + c * small, y + r * small, small, small, "S");
+            }
+            y += rows * small + 6;
+          }
+          for (let k = 0; k < 10; k++) {
+            const bx = M + k * big;
+            if (k === 0) { doc.setFillColor(251, 243, 230); doc.rect(bx, y, big, big, "F"); }
+            drawGrid(doc, bx, y, big, true);
+            if (d && k === 0) drawChar(doc, d, bx, y, big, null, INK);
+            else if (d && k <= traceN) drawChar(doc, d, bx, y, big, null, TRACE);
+          }
+          doc.setDrawColor(...RED); doc.setLineWidth(0.8); doc.rect(M, y, big * 10, big, "S");
+          doc.setLineWidth(0.5); for (let k = 1; k < 10; k++) doc.line(M + k * big, y, M + k * big, y + big);
+          if (!d) { doc.setTextColor(...MUTED); doc.setFontSize(8); doc.text("(keine Strichdaten)", M + 4, y + big - 4); }
+          y += big + 8;
+        }
+        y += 8;
+        if (wi % 5 === 0) set("Erstelle Seite " + page + "…");
+      }
+      const d0 = new Date(); const pad = (n) => String(n).padStart(2, "0");
+      const name = "hanzi-uebungsblatt-" + d0.getFullYear() + "-" + pad(d0.getMonth() + 1) + "-" + pad(d0.getDate()) + ".pdf";
+      const blob = doc.output("blob");
+      await deliverFile(blob, name, "application/pdf", "Hanzi-Übungsblatt", set, words.length + (words.length === 1 ? " Wort" : " Wörter") + " auf " + page + (page === 1 ? " Seite" : " Seiten"));
+    } catch (e) {
+      set("PDF konnte nicht erstellt werden: " + (e.message || e.name) + ". Prüfe, ob alle Dateien hochgeladen sind.", "bad");
+    }
+    $("pdfMake").disabled = false;
+  }
+  async function deliverFile(blob, name, type, title, set, what) {
+    try {
+      const file = new File([blob], name, { type });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title });
+        set("Fertig: " + what + ".", "good"); return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") { set("Abgebrochen. Du kannst es jederzeit erneut erstellen."); return; } }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+    set("Fertig: " + what + " als " + name + " gespeichert.", "good");
+  }
+  $("pdfMake").addEventListener("click", makePdf);
+
+  // =====================================================================
+  //  Sicherung inkl. Lernstand
+  // =====================================================================
+  $("exportJsonBtn").addEventListener("click", async () => {
+    if (state.examples) { backupStatus("Das ist noch die Beispielliste. Füge zuerst eigene Wörter hinzu.", "bad"); return; }
+    const d = new Date(); const pad = (n) => String(n).padStart(2, "0");
+    const name = "hanzi-sicherung-" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".json";
+    const json = JSON.stringify({ app: "hanzi-strichfolge", version: 2, words: state.words, phrases: state.phExamples ? [] : state.phrases, srs: state.srs, toneStats: state.toneStats, toneMiss: state.toneMiss }, null, 1);
+    await deliverFile(new Blob([json], { type: "application/json" }), name, "application/json", "Hanzi-Sicherung", backupStatus, state.words.length + " Wörter mit Lernstand");
+  });
+
+  updateDueBadge();
+
+
+  // =====================================================================
+  //  Phrasen
+  // =====================================================================
+  const PH_EXAMPLES = [
+    { en: "Wie heißt du?", py: "nǐ jiào shénme míngzi?", zh: "你叫什么名字？" },
+    { en: "Freut mich, dich kennenzulernen.", py: "rènshi nǐ hěn gāoxìng.", zh: "认识你很高兴。" },
+    { en: "Ich komme aus Österreich.", py: "wǒ láizì Àodìlì.", zh: "我来自奥地利。" },
+    { en: "Wie viel kostet das?", py: "zhège duōshao qián?", zh: "这个多少钱？" },
+    { en: "Ich verstehe nicht.", py: "wǒ tīng bu dǒng.", zh: "我听不懂。" }
+  ];
+  if (!Array.isArray(state.phrases) || !state.phrases.length) { state.phrases = PH_EXAMPLES.slice(); state.phExamples = true; }
+  if (typeof state.phIdx !== "number") state.phIdx = 0;
+  let ph = { cur: null, test: false, revPy: false, revZh: false, sel: -1, writer: null, token: 0 };
+
+  function phrasePinyin(zh) {
+    let p = autoPinyin(zh) || "";
+    const map = { "，": ",", "。": ".", "？": "?", "！": "!", "、": ",", "：": ":", "；": ";", "…": "…" };
+    p = p.replace(/[，。？！、：；…]/g, (c) => map[c] || c).replace(/\s+([,.?!:;…])/g, "$1").replace(/\s{2,}/g, " ").trim();
+    return p;
+  }
+  function phStatus(msg, kind) { const s = $("phStatus"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+  function phAddStatus(msg, kind) { const s = $("phAddStatus"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+
+  function renderPhList() {
+    const ul = $("phList"); ul.innerHTML = "";
+    state.phrases.forEach((w, i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button"); b.type = "button";
+      b.setAttribute("aria-current", i === state.phIdx ? "true" : "false");
+      b.innerHTML = '<span class="zh"></span><span class="en"></span>';
+      b.querySelector(".zh").textContent = ph.test ? "？" : w.zh;
+      b.querySelector(".en").textContent = w.en || w.py;
+      b.addEventListener("click", () => phGo(i));
+      li.appendChild(b); ul.appendChild(li);
+    });
+    $("phExampleBadge").hidden = !state.phExamples;
+  }
+
+  function renderPhrase() {
+    ph.token++; stopAudio();
+    if (state.phIdx >= state.phrases.length) state.phIdx = Math.max(0, state.phrases.length - 1);
+    const w = state.phrases[state.phIdx];
+    ph.cur = w || null;
+    $("phEditForm").hidden = true; $("phEditBtn").setAttribute("aria-expanded", "false");
+    $("phSrc").innerHTML = ""; phStatus("");
+    $("phTest").setAttribute("aria-pressed", ph.test ? "true" : "false");
+    $("phSlow").checked = !!state.slow;
+    if (!w) {
+      $("phCount").textContent = "Noch keine Phrasen";
+      $("phEn").textContent = "Füge unten deine erste Phrase hinzu."; $("phPy").textContent = ""; $("phZh").innerHTML = "";
+      $("phPanel").hidden = true; renderPhList(); return;
+    }
+    $("phCount").textContent = (state.phIdx + 1) + " von " + state.phrases.length;
+    $("phEn").textContent = w.en || "—";
+    const showPy = !ph.test || ph.revPy, showZh = !ph.test || ph.revZh;
+    $("phPy").textContent = w.py; $("phPy").hidden = !showPy; $("phRevealPy").hidden = showPy;
+    $("phRevealZh").hidden = showZh; $("phZh").hidden = !showZh;
+    // characters as tappable buttons, punctuation as plain text
+    const box = $("phZh"); box.innerHTML = "";
+    const syls = syllables(w);
+    let hi = 0;
+    [...w.zh].forEach((c) => {
+      if (isHan(c)) {
+        const b = document.createElement("button"); b.type = "button"; b.className = "ph-char"; b.textContent = c;
+        const myIdx = hi++, pySyl = (syls[myIdx] && syls[myIdx].py) || "";
+        b.setAttribute("aria-label", c + (pySyl ? " (" + pySyl + ")" : "") + ": Strichfolge zeigen");
+        b.addEventListener("click", () => selectPhChar(c, pySyl, b));
+        box.appendChild(b);
+      } else if (c.trim()) {
+        const sp = document.createElement("span"); sp.className = "ph-punct"; sp.textContent = c; box.appendChild(sp);
+      }
+    });
+    $("phPanel").hidden = true; ph.sel = -1;
+    renderPhList();
+    save();
+  }
+
+  function selectPhChar(ch, pySyl, btn) {
+    document.querySelectorAll(".ph-char").forEach(x => x.setAttribute("aria-pressed", x === btn ? "true" : "false"));
+    $("phPanel").hidden = false;
+    $("phPanelZh").textContent = ch; $("phPanelPy").textContent = pySyl;
+    ph.selChar = ch; ph.selPy = pySyl;
+    const size = Math.min(200, Math.max(140, ($("phPanel").clientWidth || 400) - 40));
+    const boxEl = $("phBox"); boxEl.style.setProperty("--size", size + "px");
+    boxEl.innerHTML = gridSvg() + '<div class="hw"></div>';
+    ph.writer = null;
+    if (window.HanziWriter) {
+      ph.writer = HanziWriter.create(boxEl.querySelector(".hw"), ch, Object.assign({
+        width: size, height: size, padding: Math.round(size * 0.06), showOutline: true,
+        strokeAnimationSpeed: state.speed, delayBetweenStrokes: 250 / state.speed,
+        charDataLoader: (c, ok, err) => getData(c).then(d => d ? ok(d) : err(new Error("none"))).catch(err),
+        onLoadCharDataError: () => { boxEl.innerHTML = gridSvg() + '<div class="missing"><div><b></b>Keine Strichdaten für dieses Zeichen</div></div>'; boxEl.querySelector("b").textContent = ch; }
+      }, colors()));
+    }
+    const strips = $("phStrip"); strips.innerHTML = "";
+    const block = document.createElement("div");
+    block.innerHTML = '<div class="strip-head"><span class="left"><span class="zh"></span></span><span class="n">Lädt…</span></div><div class="strip"></div>';
+    block.querySelector(".zh").textContent = ch;
+    strips.appendChild(block);
+    getData(ch).then(d => buildStrip(block, d)).catch(() => buildStrip(block, null));
+    try { $("phPanel").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" }); } catch (e) {}
+  }
+
+  function phGo(i) {
+    if (!state.phrases.length) return;
+    state.phIdx = (i + state.phrases.length) % state.phrases.length;
+    ph.revPy = ph.revZh = false;
+    renderPhrase();
+    if (state.auto && !ph.test) speak(state.phrases[state.phIdx].zh);
+  }
+
+  $("phPrev").addEventListener("click", () => phGo(state.phIdx - 1));
+  $("phNext").addEventListener("click", () => phGo(state.phIdx + 1));
+  $("phTest").addEventListener("click", () => { ph.test = !ph.test; ph.revPy = ph.revZh = false; renderPhrase(); });
+  $("phRevealPy").addEventListener("click", () => { ph.revPy = true; $("phPy").hidden = false; $("phRevealPy").hidden = true; });
+  $("phRevealZh").addEventListener("click", () => { ph.revZh = true; $("phZh").hidden = false; $("phRevealZh").hidden = true; renderPhList(); if (state.auto && ph.cur) speak(ph.cur.zh); });
+  $("phSay").addEventListener("click", () => { if (ph.cur) speak(ph.cur.zh); });
+  $("phSlow").addEventListener("change", (e) => { state.slow = e.target.checked; $("slowIn").checked = state.slow; save(); });
+  $("phCharPlay").addEventListener("click", () => { if (!ph.writer) return; try { ph.writer.cancelQuiz(); ph.writer.showOutline(); ph.writer.hideCharacter(); ph.writer.animateCharacter(); } catch (e) {} });
+  $("phCharQuiz").addEventListener("click", () => {
+    if (!ph.writer) return;
+    let miss = 0;
+    try { ph.writer.hideCharacter(); ph.writer.showOutline(); } catch (e) {}
+    phStatus("Zeichne " + ph.selChar + " im Kästchen nach.");
+    ph.writer.quiz({ showHintAfterMisses: 2, onMistake: () => { miss++; }, onComplete: () => phStatus(miss ? "Fertig mit " + miss + " Fehler" + (miss === 1 ? "." : "n.") : "Perfekt, keine Fehler.", miss ? "bad" : "good") });
+  });
+  $("phCharSay").addEventListener("click", () => { if (ph.selChar) speak(ph.selChar); });
+  $("phCharToVocab").addEventListener("click", () => {
+    const ch = ph.selChar; if (!ch) return;
+    if (state.words.some(w => hanOf(w.zh) === ch)) { phStatus(ch + " ist schon in deinen Vokabeln."); return; }
+    if (state.examples) { state.words = []; state.examples = false; }
+    state.words.push({ en: "", py: ph.selPy || autoPinyin(ch), zh: ch });
+    save(); try { updateDueBadge(); } catch (e) {}
+    phStatus(ch + " wurde zu den Vokabeln hinzugefügt. Die deutsche Bedeutung kannst du dort mit „Bearbeiten“ ergänzen.", "good");
+  });
+  $("phDel").addEventListener("click", () => {
+    if (!state.phrases.length) return;
+    state.phrases.splice(state.phIdx, 1);
+    if (state.phIdx >= state.phrases.length) state.phIdx = Math.max(0, state.phrases.length - 1);
+    renderPhrase(); phStatus("Phrase gelöscht.");
+  });
+
+  // edit
+  $("phEditBtn").addEventListener("click", () => {
+    const f = $("phEditForm");
+    if (!f.hidden) { f.hidden = true; $("phEditBtn").setAttribute("aria-expanded", "false"); return; }
+    const w = ph.cur; if (!w) return;
+    $("phEditEn").value = w.en || ""; $("phEditPy").value = w.py || ""; $("phEditZh").value = w.zh || "";
+    f.hidden = false; $("phEditBtn").setAttribute("aria-expanded", "true"); $("phEditEn").focus();
+  });
+  $("phEditCancel").addEventListener("click", () => { $("phEditForm").hidden = true; $("phEditBtn").setAttribute("aria-expanded", "false"); });
+  $("phEditAutoPy").addEventListener("click", () => { const zh = $("phEditZh").value.trim(); if ([...zh].some(isHan)) $("phEditPy").value = phrasePinyin(zh); });
+  $("phEditForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const w = ph.cur; if (!w) return;
+    const en = $("phEditEn").value.trim(), zh = $("phEditZh").value.trim();
+    let py = $("phEditPy").value.trim();
+    if (![...zh].some(isHan)) { phStatus("Das Feld Schriftzeichen braucht mindestens ein chinesisches Zeichen.", "bad"); return; }
+    if (!py || (zh !== w.zh && py === w.py)) py = phrasePinyin(zh);
+    state.phrases[state.phIdx] = { en, py, zh };
+    state.phExamples = false;
+    renderPhrase(); phStatus("Gespeichert.", "good");
+  });
+
+  // add
+  function addPhrases(list) {
+    if (!list.length) { phAddStatus("Keine chinesischen Schriftzeichen gefunden. Jede Zeile braucht mindestens ein Zeichen.", "bad"); return; }
+    if (state.phExamples) { state.phrases = []; state.phExamples = false; }
+    const start = state.phrases.length;
+    state.phrases.push(...list.map(w => ({ en: w.en, py: w.pyGiven ? w.py : phrasePinyin(w.zh), zh: w.zh })));
+    state.phIdx = start; ph.revPy = ph.revZh = false;
+    renderPhrase();
+    phAddStatus(list.length + (list.length === 1 ? " Phrase" : " Phrasen") + " hinzugefügt.", "good");
+  }
+  function parsePhraseLine(line) {
+    const parts = line.split(/\s*[|\t]\s*/).map(s => s.trim()).filter(Boolean);
+    const hanIdx = parts.findIndex(p => [...p].some(isHan));
+    if (hanIdx < 0) return null;
+    const zh = parts[hanIdx], rest = parts.filter((_, k) => k !== hanIdx);
+    return { en: rest[0] || "", py: rest[1] || "", pyGiven: !!rest[1], zh };
+  }
+  $("phOneForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const zh = $("phZhIn").value.trim();
+    if (![...zh].some(isHan)) { phAddStatus("Gib im Feld Schriftzeichen mindestens ein chinesisches Zeichen ein.", "bad"); return; }
+    const py = $("phPyIn").value.trim();
+    addPhrases([{ en: $("phEnIn").value.trim(), py, pyGiven: !!py, zh }]);
+    $("phEnIn").value = $("phPyIn").value = $("phZhIn").value = "";
+  });
+  $("phBulkForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const list = $("phBulkIn").value.split(/\r?\n/).map(parsePhraseLine).filter(Boolean);
+    addPhrases(list); if (list.length) $("phBulkIn").value = "";
+  });
+  $("phExport").addEventListener("click", async () => {
+    if (state.phExamples) { phAddStatus("Das sind noch die Beispiele. Füge zuerst eigene Phrasen hinzu.", "bad"); return; }
+    const text = state.phrases.map(w => [w.en || "", w.py || "", w.zh].map(x => x.replace(/[|\r\n]+/g, " ").trim()).join(" | ")).join("\n") + "\n";
+    const d = new Date(); const pad = (n) => String(n).padStart(2, "0");
+    const name = "hanzi-phrasen-" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".txt";
+    await deliverFile(new Blob([text], { type: "text/plain" }), name, "text/plain", "Hanzi-Phrasen", phAddStatus, state.phrases.length + " Phrasen");
+  });
+  $("phImportIn").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    try {
+      const raw = (await f.text()).replace(/^﻿/, "");
+      addPhrases(raw.split(/\r?\n/).map(parsePhraseLine).filter(Boolean));
+    } catch (err) { phAddStatus("Die Datei konnte nicht gelesen werden.", "bad"); }
     e.target.value = "";
   });
 
@@ -910,6 +1946,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
 
   if (state.idx >= state.words.length) state.idx = 0;
   renderCard();
+  if (location.hash && location.hash.length > 1) showView(location.hash.slice(1));
 })();
 </script>
 </body>
