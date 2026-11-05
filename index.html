@@ -80,7 +80,7 @@ header p { margin: 0; color: var(--muted); font-size: .9rem; }
 .count { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
 .field { display: grid; gap: 2px; }
 .english { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.2; text-wrap: balance; margin: 0; }
-.pinyin { font-size: 1.35rem; font-weight: 500; letter-spacing: .02em; margin: 0; min-height: 2rem; }
+.pinyin { font-size: 1.35rem; font-weight: 500; letter-spacing: .02em; margin: 0; }
 .reveal { font: inherit; font-size: .85rem; justify-self: start; color: var(--cinnabar); background: var(--cinnabar-soft); border: 1px dashed var(--cinnabar); border-radius: 6px; padding: 4px 12px; cursor: pointer; }
 
 .chars { display: flex; flex-wrap: wrap; gap: 14px; }
@@ -132,6 +132,20 @@ textarea { min-height: 110px; resize: vertical; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); -webkit-tap-highlight-color: transparent; }
 .box { touch-action: none; -webkit-user-select: none; user-select: none; }
+.py-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.say { font: inherit; font-size: .85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; cursor: pointer; border: 1px solid var(--cinnabar); background: var(--cinnabar-soft); color: var(--cinnabar); }
+.say:hover { filter: brightness(1.04); }
+.say:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+.say.small { padding: 2px 9px; font-size: .78rem; }
+.say svg { width: 15px; height: 15px; }
+.slow { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); cursor: pointer; }
+.slow input { accent-color: var(--cinnabar); width: 16px; height: 16px; }
+.strip-head .left { display: flex; align-items: center; gap: 10px; }
+.backup { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
+.backup h3 { margin: 0; font-size: .95rem; font-weight: 600; }
+.file-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.file-btn:focus-within { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
 .offline { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 </style>
 </head>
@@ -169,8 +183,13 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       </div>
       <div class="field">
         <span class="label">Pinyin</span>
-        <p class="pinyin" id="pinyin"></p>
-        <button class="reveal" id="revealPy" type="button" hidden>Pinyin zeigen</button>
+        <div class="py-row">
+          <p class="pinyin" id="pinyin"></p>
+          <button class="reveal" id="revealPy" type="button" hidden>Pinyin zeigen</button>
+          <button class="say" id="sayBtn" type="button" aria-label="Aussprache anhören"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>Anhören</button>
+          <label class="slow" for="slowIn"><input type="checkbox" id="slowIn"> Langsam</label>
+          <label class="slow" for="autoIn"><input type="checkbox" id="autoIn"> Automatisch vorlesen</label>
+        </div>
       </div>
       <div class="field" id="charField">
         <span class="label">Schriftzeichen</span>
@@ -213,6 +232,17 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
         </div>
       </form>
       <p class="status" id="addStatus"></p>
+      <div class="backup">
+        <h3>Liste sichern und importieren</h3>
+        <p class="hint">Der Export speichert alle Wörter als Textdatei (<code>Deutsch | Pinyin | 汉字</code>). Diese Datei kannst du später hier wieder importieren, auf einem anderen Gerät öffnen oder bearbeiten.</p>
+        <div class="add-actions">
+          <button class="btn primary" type="button" id="exportBtn">Liste exportieren</button>
+          <button class="btn" type="button" id="copyBtn">Als Text kopieren</button>
+          <label class="btn file-btn" for="importIn">Datei importieren<input type="file" id="importIn" accept=".txt,.csv,.tsv,.json,text/plain,application/json"></label>
+          <label class="slow" for="importReplace"><input type="checkbox" id="importReplace"> Aktuelle Liste beim Import ersetzen</label>
+        </div>
+        <p class="status" id="backupStatus"></p>
+      </div>
       <div class="offline">
         <button class="btn" type="button" id="offlineBtn">Alle Schriftzeichen offline speichern</button>
         <span class="hint" id="offlineStatus">Geöffnete Zeichen werden automatisch gespeichert. Hiermit lädst du alle 9.500 auf einmal (ca. 30 MB).</span>
@@ -337,8 +367,10 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       }
 
       const block = document.createElement("div");
-      block.innerHTML = '<div class="strip-head"><span class="zh"></span><span class="n">Lädt…</span></div><div class="strip"></div>';
+      block.innerHTML = '<div class="strip-head"><span class="left"><span class="zh"></span><button class="say small" type="button">▶ Zeichen anhören</button></span><span class="n">Lädt…</span></div><div class="strip"></div>';
       block.querySelector(".zh").textContent = ch;
+      block.querySelector(".say").setAttribute("aria-label", ch + " anhören");
+      block.querySelector(".say").addEventListener("click", () => speak(ch));
       strips.appendChild(block);
       getData(ch).then(d => buildStrip(block, d)).catch(() => buildStrip(block, null));
     });
@@ -418,11 +450,40 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     next();
   }
 
+  // speech: built-in Chinese voice (works offline on iPad)
+  let zhVoice = null;
+  function pickVoice() {
+    try {
+      const vs = speechSynthesis.getVoices();
+      const zh = vs.filter(v => /^zh[-_](CN|Hans)/i.test(v.lang) || v.lang === "zh");
+      zhVoice = zh.find(v => /Tingting|Ting-Ting|Li-?mu|Yu-?shu/i.test(v.name)) || zh.find(v => v.localService) || zh[0]
+        || vs.find(v => /^zh/i.test(v.lang)) || null;
+    } catch (e) { zhVoice = null; }
+  }
+  if ("speechSynthesis" in window) { pickVoice(); try { speechSynthesis.addEventListener("voiceschanged", pickVoice); } catch (e) {} }
+  function speak(text) {
+    if (!("speechSynthesis" in window)) { setStatus("Dieses Gerät unterstützt keine Sprachausgabe.", "bad"); return; }
+    if (!zhVoice) pickVoice();
+    const han = [...text].filter(isHan).join("");
+    if (!han) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(han);
+      u.lang = zhVoice ? zhVoice.lang : "zh-CN";
+      if (zhVoice) u.voice = zhVoice;
+      u.rate = state.slow ? 0.55 : 0.9;
+      u.onerror = (e) => { if (e.error !== "interrupted" && e.error !== "canceled") setStatus("Aussprache konnte nicht abgespielt werden.", "bad"); };
+      speechSynthesis.speak(u);
+      if (!zhVoice) setStatus("Keine chinesische Stimme gefunden. Am iPad: Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Chinesisch (China) laden.", "bad");
+    } catch (e) { setStatus("Aussprache konnte nicht abgespielt werden.", "bad"); }
+  }
+
   function go(i) {
     if (!state.words.length) return;
     state.idx = (i + state.words.length) % state.words.length;
     revealPy = false; revealZh = false;
     renderCard();
+    if (state.auto && !state.test) speak(state.words[state.idx].zh);
   }
 
   // pinyin helper
@@ -460,7 +521,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   $("nextBtn").addEventListener("click", () => go(state.idx + 1));
   $("testBtn").addEventListener("click", () => { state.test = !state.test; revealPy = revealZh = false; renderCard(); });
   $("revealPy").addEventListener("click", () => { revealPy = true; $("pinyin").hidden = false; $("revealPy").hidden = true; });
-  $("revealZh").addEventListener("click", () => { revealZh = true; cancelAll(); $("card").classList.remove("hidden-chars"); $("charField").classList.remove("hidden-chars"); $("revealZh").hidden = true; writers.forEach(({ writer }) => { writer.showOutline(); writer.showCharacter(); }); renderList(); });
+  $("revealZh").addEventListener("click", () => { revealZh = true; cancelAll(); $("card").classList.remove("hidden-chars"); $("charField").classList.remove("hidden-chars"); $("revealZh").hidden = true; writers.forEach(({ writer }) => { writer.showOutline(); writer.showCharacter(); }); renderList(); if (state.auto) speak(state.words[state.idx].zh); });
   $("delBtn").addEventListener("click", () => {
     if (state.words.length <= 1) { setStatus("Mindestens ein Wort muss bleiben. Füge unten neue Wörter hinzu und lösche dann dieses.", "bad"); return; }
     state.words.splice(state.idx, 1);
@@ -473,6 +534,11 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     if (looping) { setStatus(""); animateAll(true); } else { cancelAll(); writers.forEach(({ writer }) => writer.showCharacter()); }
   });
   $("quizBtn").addEventListener("click", practice);
+  $("sayBtn").addEventListener("click", () => speak(state.words[state.idx].zh));
+  $("slowIn").checked = !!state.slow;
+  $("slowIn").addEventListener("change", (e) => { state.slow = e.target.checked; save(); });
+  $("autoIn").checked = !!state.auto;
+  $("autoIn").addEventListener("change", (e) => { state.auto = e.target.checked; save(); });
   $("speed").value = state.speed;
   $("speed").addEventListener("change", (e) => { state.speed = parseFloat(e.target.value) || 1; renderCard(); });
 
@@ -497,6 +563,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     if (e.key === "ArrowRight") go(state.idx + 1);
     else if (e.key === "ArrowLeft") go(state.idx - 1);
     else if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); animateAll(false); }
+    else if (e.key === "s" || e.key === "S") speak(state.words[state.idx].zh);
   });
 
   // re-color writers when the theme changes
@@ -513,6 +580,57 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       st.textContent = "Alle Schriftzeichen gespeichert. Die App funktioniert jetzt ohne Internet.";
     } catch (e) { st.textContent = "Speichern abgebrochen (" + done + " von 32 Teilen). Prüfe die Verbindung und versuch es erneut."; }
     $("offlineBtn").disabled = false;
+  });
+
+  // export / import
+  function backupStatus(msg, kind) { const s = $("backupStatus"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+  function listText() {
+    return state.words.map(w => [w.en || "", w.py || "", w.zh].map(x => x.replace(/[|\r\n]+/g, " ").trim()).join(" | ")).join("\n") + "\n";
+  }
+  $("exportBtn").addEventListener("click", async () => {
+    if (state.examples) { backupStatus("Das ist noch die Beispielliste. Füge zuerst eigene Wörter hinzu.", "bad"); return; }
+    const d = new Date(); const pad = (n) => String(n).padStart(2, "0");
+    const name = "hanzi-vokabeln-" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".txt";
+    const text = listText();
+    try {
+      const file = new File([text], name, { type: "text/plain" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Hanzi-Vokabeln" });
+        backupStatus("Exportiert. Wähle im Teilen-Menü „In Dateien sichern“, um die Liste aufzubewahren.", "good");
+        return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") { backupStatus("Export abgebrochen."); return; } }
+    try {
+      const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+      const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      backupStatus(state.words.length + " Wörter als " + name + " gespeichert.", "good");
+    } catch (e) { backupStatus("Export hat nicht geklappt. Nutze stattdessen „Als Text kopieren“.", "bad"); }
+  });
+  $("copyBtn").addEventListener("click", async () => {
+    const text = listText();
+    try { await navigator.clipboard.writeText(text); backupStatus(state.words.length + " Wörter kopiert. Du kannst sie z. B. in Notizen einfügen und später unter „Liste einfügen“ wieder importieren.", "good"); }
+    catch (e) { $("bulkIn").value = text; $("bulkIn").focus(); $("bulkIn").select(); backupStatus("Die Liste steht jetzt im Textfeld oben. Markiert lassen und kopieren.", "bad"); }
+  });
+  $("importIn").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try {
+      const raw = await f.text();
+      let words = [];
+      const t = raw.trim();
+      if (t.startsWith("[") || t.startsWith("{")) {
+        const j = JSON.parse(t); const arr = Array.isArray(j) ? j : (j.words || []);
+        words = arr.filter(w => w && typeof w.zh === "string" && [...w.zh].some(isHan))
+          .map(w => ({ en: String(w.en || ""), py: String(w.py || "") || autoPinyin(w.zh), zh: w.zh }));
+      } else {
+        words = raw.replace(/^\uFEFF/, "").split(/\r?\n/).map(parseLine).filter(Boolean);
+      }
+      if (!words.length) { backupStatus("In dieser Datei wurden keine Wörter mit chinesischen Schriftzeichen gefunden.", "bad"); return; }
+      addWords(words, $("importReplace").checked);
+      backupStatus(words.length + (words.length === 1 ? " Wort" : " Wörter") + " aus " + f.name + " importiert.", "good");
+    } catch (err) { backupStatus("Die Datei konnte nicht gelesen werden. Erwartet wird eine Textdatei mit Zeilen wie „lernen | xuéxí | 学习“.", "bad"); }
+    e.target.value = "";
   });
 
   if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
