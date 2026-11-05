@@ -140,6 +140,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
 .say svg { width: 15px; height: 15px; }
 .slow { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); cursor: pointer; }
 .slow input { accent-color: var(--cinnabar); width: 16px; height: 16px; }
+.slow select { font: inherit; font-size: .85rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; max-width: 220px; }
 .strip-head .left { display: flex; align-items: center; gap: 10px; }
 .backup { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
 .backup h3 { margin: 0; font-size: .95rem; font-weight: 600; }
@@ -189,6 +190,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
           <button class="say" id="sayBtn" type="button" aria-label="Aussprache anhören"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>Anhören</button>
           <label class="slow" for="slowIn"><input type="checkbox" id="slowIn"> Langsam</label>
           <label class="slow" for="autoIn"><input type="checkbox" id="autoIn"> Automatisch vorlesen</label>
+          <label class="slow" for="voiceSel">Stimme <select id="voiceSel"><option value="">Wird geladen…</option></select></label>
         </div>
       </div>
       <div class="field" id="charField">
@@ -451,16 +453,35 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   }
 
   // speech: built-in Chinese voice (works offline on iPad)
-  let zhVoice = null;
+  let zhVoice = null, zhVoices = [];
+  const quality = (v) => /premium/i.test(v.name) ? 3 : /enhanced|erweitert|verbessert/i.test(v.name) ? 2 : 1;
+  const regionName = (lang) => /TW|Hant/i.test(lang) ? "Taiwan" : /HK/i.test(lang) ? "Hongkong" : "China";
   function pickVoice() {
     try {
       const vs = speechSynthesis.getVoices();
-      const zh = vs.filter(v => /^zh[-_](CN|Hans)/i.test(v.lang) || v.lang === "zh");
-      zhVoice = zh.find(v => /Tingting|Ting-Ting|Li-?mu|Yu-?shu/i.test(v.name)) || zh.find(v => v.localService) || zh[0]
-        || vs.find(v => /^zh/i.test(v.lang)) || null;
-    } catch (e) { zhVoice = null; }
+      const all = vs.filter(v => /^(zh|cmn)/i.test(v.lang));
+      // Mandarin (China) first, best quality first
+      zhVoices = all.sort((a, b) => {
+        const ra = /CN|Hans/i.test(a.lang) ? 0 : /TW/i.test(a.lang) ? 1 : 2, rb = /CN|Hans/i.test(b.lang) ? 0 : /TW/i.test(b.lang) ? 1 : 2;
+        return ra - rb || quality(b) - quality(a) || a.name.localeCompare(b.name);
+      });
+      zhVoice = zhVoices.find(v => v.voiceURI === state.voice) || zhVoices.find(v => /CN|Hans/i.test(v.lang)) || zhVoices[0] || null;
+    } catch (e) { zhVoices = []; zhVoice = null; }
+    fillVoiceSelect();
   }
-  if ("speechSynthesis" in window) { pickVoice(); try { speechSynthesis.addEventListener("voiceschanged", pickVoice); } catch (e) {} }
+  function fillVoiceSelect() {
+    const sel = $("voiceSel"); if (!sel) return;
+    sel.innerHTML = "";
+    if (!zhVoices.length) { const o = document.createElement("option"); o.value = ""; o.textContent = "Keine chinesische Stimme gefunden"; sel.appendChild(o); sel.disabled = true; return; }
+    sel.disabled = false;
+    zhVoices.forEach(v => {
+      const o = document.createElement("option"); o.value = v.voiceURI;
+      o.textContent = v.name.replace(/\s*\((Premium|Enhanced|Erweitert|Verbessert)\)/i, "") + (quality(v) === 3 ? " (Premium)" : quality(v) === 2 ? " (Erweitert)" : "") + " · " + regionName(v.lang);
+      if (zhVoice && v.voiceURI === zhVoice.voiceURI) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  if ("speechSynthesis" in window) { pickVoice(); try { speechSynthesis.addEventListener("voiceschanged", pickVoice); } catch (e) {} [400, 1500, 4000].forEach(t => setTimeout(() => { if (!zhVoices.length) pickVoice(); }, t)); }
   function speak(text) {
     if (!("speechSynthesis" in window)) { setStatus("Dieses Gerät unterstützt keine Sprachausgabe.", "bad"); return; }
     if (!zhVoice) pickVoice();
@@ -537,6 +558,12 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   $("sayBtn").addEventListener("click", () => speak(state.words[state.idx].zh));
   $("slowIn").checked = !!state.slow;
   $("slowIn").addEventListener("change", (e) => { state.slow = e.target.checked; save(); });
+  $("voiceSel").addEventListener("focus", () => { if (!zhVoices.length) pickVoice(); });
+  $("voiceSel").addEventListener("change", (e) => {
+    state.voice = e.target.value; save();
+    zhVoice = zhVoices.find(v => v.voiceURI === state.voice) || zhVoice;
+    speak(state.words[state.idx].zh);
+  });
   $("autoIn").checked = !!state.auto;
   $("autoIn").addEventListener("change", (e) => { state.auto = e.target.checked; save(); });
   $("speed").value = state.speed;
