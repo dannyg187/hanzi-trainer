@@ -339,7 +339,7 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
     const w = state.words[state.idx];
     $("count").textContent = (state.idx + 1) + " von " + state.words.length;
     stopAudio(); $("audioSrc").innerHTML = "";
-    try { const ent = audioIndex[[...w.zh].filter(isHan).join("")]; if (ent && !ent.none && state.real !== false) cacheGet([...w.zh].filter(isHan).join(""), ent.list[ent.pick % ent.list.length].url).catch(() => {}); } catch (e) {}
+    try { const ent = audioIndex[[...w.zh].filter(isHan).join("")]; if (ent && !ent.none && state.real !== false) cacheGet([...w.zh].filter(isHan).join(""), (ent.list[ent.pick % ent.list.length].srcs || [ent.list[ent.pick % ent.list.length].url])[0]).catch(() => {}); } catch (e) {}
     $("english").textContent = w.en || "—";
     $("pinyin").textContent = w.py;
     const showPy = !state.test || revealPy, showZh = !state.test || revealZh;
@@ -518,46 +518,58 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
   const AUDIO_CACHE = "hanzi-audio-v1";
   const RETRY_MS = 7 * 24 * 3600 * 1000;
   let audioIndex = {};   // word -> { list:[{title,url,user,license,page}], pick, ts } or { none:true, ts }
-  try { audioIndex = JSON.parse(localStorage.getItem(KEY + "-audio") || "{}") || {}; } catch (e) {}
-  const saveAudioIndex = () => { try { localStorage.setItem(KEY + "-audio", JSON.stringify(audioIndex)); } catch (e) {} };
+  try { audioIndex = JSON.parse(localStorage.getItem(KEY + "-audio2") || "{}") || {}; } catch (e) {}
+  try { localStorage.removeItem(KEY + "-audio"); } catch (e) {}
+  const saveAudioIndex = () => { try { localStorage.setItem(KEY + "-audio2", JSON.stringify(audioIndex)); } catch (e) {} };
   const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const stripTags = (h) => { const d = document.createElement("div"); d.innerHTML = h || ""; return (d.textContent || "").trim(); };
 
-  function playableUrl(u) {
-    // Safari plays WAV and MP3 reliably; use Wikimedia's MP3 transcode for Ogg/FLAC/WebM
-    if (/\.(wav|mp3)$/i.test(u)) return u;
-    const m = u.match(/^(https:\/\/upload\.wikimedia\.org\/wikipedia\/commons)\/(.+\/)([^/]+)$/);
-    return m ? m[1] + "/transcoded/" + m[2] + m[3] + "/" + m[3] + ".mp3" : u;
+  // Formats Safari/iPad can decode: MP3, AAC/M4A, WAV, FLAC. Ogg/WebM originals are only usable via a transcode.
+  const okType = (t) => /audio\/(mpeg|mp3|mp4|aac|x-m4a|wav|x-wav|wave|vnd\.wave|flac|x-flac)/i.test(t || "");
+  const okExt = (u) => /\.(mp3|m4a|aac|wav|flac)(\?|$)/i.test(u || "");
+  const rankSrc = (x) => /mpeg|mp3|\.mp3/i.test(x) ? 0 : /mp4|aac|m4a/i.test(x) ? 1 : /wav/i.test(x) ? 2 : 3;
+
+  function sourcesFor(pg) {
+    const vi = pg.videoinfo && pg.videoinfo[0], ii = pg.imageinfo && pg.imageinfo[0];
+    const info = vi || ii; if (!info) return { info: null, srcs: [] };
+    const srcs = [];
+    (info.derivatives || []).forEach(d => { if (d && d.src && (okType(d.type) || okExt(d.src))) srcs.push({ src: d.src, type: d.type || "" }); });
+    if (info.url && okExt(info.url) && !srcs.some(x => x.src === info.url)) srcs.push({ src: info.url, type: "" });
+    srcs.sort((a, b) => rankSrc(a.type || a.src) - rankSrc(b.type || b.src));
+    return { info, srcs: srcs.map(x => x.src) };
   }
 
   async function findRecordings(word) {
     const q = 'intitle:"' + word + '" filetype:audio';
     const url = API + "?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=50" +
-      "&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|user|extmetadata&iiextmetadatafilter=LicenseShortName|Artist";
+      "&gsrsearch=" + encodeURIComponent(q) +
+      "&prop=videoinfo|imageinfo&viprop=url|user|extmetadata|derivatives&viextmetadatafilter=LicenseShortName|Artist" +
+      "&iiprop=url|user|extmetadata&iiextmetadatafilter=LicenseShortName|Artist";
     const r = await fetch(url);
     if (!r.ok) throw new Error("api " + r.status);
     const j = await r.json();
     const pages = Object.values((j.query && j.query.pages) || {});
     const w = esc(word);
     // Lingua Libre: "File:LL-Q… (cmn)-Speaker-学习.wav"; other Mandarin files: "File:Zh-学习.ogg", "File:Cmn-学习.ogg"
-    const reLL = new RegExp("^File:LL-Q\\d+ \\((cmn|zho|zh)[^)]*\\)-(.+?)-" + w + "\\.(wav|ogg|oga|mp3|flac|webm)$", "i");
-    const reZh = new RegExp("^File:(Zh|Cmn|Zh-cn|Zh-hans)-" + w + "\\.(wav|ogg|oga|mp3|flac|webm)$", "i");
+    const reLL = new RegExp("^File:LL-Q\\d+ \\((cmn|zho|zh)[^)]*\\)-(.+?)-" + w + "\\.[a-z0-9]+$", "i");
+    const reZh = new RegExp("^File:(Zh|Cmn|Zh-cn|Zh-hans)-" + w + "\\.[a-z0-9]+$", "i");
     const out = [];
     pages.forEach(pg => {
-      const ii = pg.imageinfo && pg.imageinfo[0]; if (!ii) return;
       const t = pg.title; let speaker = "";
       const mLL = t.match(reLL);
       if (mLL) speaker = mLL[2]; else if (!reZh.test(t)) return;
-      const md = ii.extmetadata || {};
-      out.push({ title: t, url: playableUrl(ii.url), user: speaker || stripTags(md.Artist && md.Artist.value) || ii.user || "unbekannt",
-        license: (md.LicenseShortName && md.LicenseShortName.value) || "freie Lizenz", page: ii.descriptionurl || ("https://commons.wikimedia.org/wiki/" + encodeURIComponent(t)),
-        ll: !!mLL });
+      const { info, srcs } = sourcesFor(pg);
+      if (!info || !srcs.length) return;          // no version the iPad can play
+      const md = info.extmetadata || {};
+      out.push({ title: t, srcs, url: srcs[0], user: speaker || stripTags(md.Artist && md.Artist.value) || info.user || "unbekannt",
+        license: (md.LicenseShortName && md.LicenseShortName.value) || "freie Lizenz",
+        page: info.descriptionurl || ("https://commons.wikimedia.org/wiki/" + encodeURIComponent(t)), ll: !!mLL });
     });
-    out.sort((a, b) => (b.ll - a.ll) || (/\.wav$/i.test(b.url) - /\.wav$/i.test(a.url)));
+    out.sort((a, b) => (b.ll - a.ll));
     return out;
   }
 
-  const mimeOf = (u) => /\.mp3($|\?)/i.test(u) ? "audio/mpeg" : /\.wav($|\?)/i.test(u) ? "audio/wav" : "audio/mpeg";
+  const mimeOf = (u) => /\.wav($|\?)/i.test(u) ? "audio/wav" : /\.flac($|\?)/i.test(u) ? "audio/flac" : /\.(m4a|aac)($|\?)/i.test(u) ? "audio/mp4" : "audio/mpeg";
   // returns { buf: ArrayBuffer, type } from the offline store, downloading it the first time
   async function cacheGet(word, url) {
     const key = "audio/" + encodeURIComponent(word) + "?src=" + encodeURIComponent(url);
@@ -634,13 +646,21 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
       } catch (e) { entry = null; }
     }
     if (!entry || entry.none) { showSource(word, null); speakTTS(word); return; }
-    const rec = entry.list[entry.pick % entry.list.length];
-    showSource(word, rec, entry.list);
     const rate = state.slow ? 0.7 : 1;
     const why = [];
-    let data = null;
-    try { data = await cacheGet(word, rec.url); } catch (e) { why.push("Laden: " + (e.message || e.name)); }
+    let data = null, rec = null;
+    // try the chosen speaker first, then the others; for each, every playable version Wikimedia lists
+    for (let k = 0; k < entry.list.length && !data; k++) {
+      const cand = entry.list[(entry.pick + k) % entry.list.length];
+      for (const src of (cand.srcs || [cand.url])) {
+        try { data = await cacheGet(word, src); rec = Object.assign({}, cand, { url: src }); if (k) { entry.pick = (entry.pick + k) % entry.list.length; saveAudioIndex(); } break; }
+        catch (e) { why.push("Laden: " + (e.message || e.name)); }
+        if (my !== playToken) return;
+      }
+    }
     if (my !== playToken) return;
+    if (!rec) rec = entry.list[entry.pick % entry.list.length];
+    showSource(word, rec, entry.list);
 
     // Web Audio is the most reliable path on iPad once the tap has unlocked it.
     // It cannot slow down without changing pitch (bad for tones), so "Langsam" tries the normal player first.
@@ -694,7 +714,10 @@ body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)); padding
           entry = list.length ? { list, pick: 0, ts: Date.now() } : { none: true, ts: Date.now() };
           audioIndex[word] = entry; saveAudioIndex();
         }
-        if (!entry.none) { found++; await cacheGet(word, entry.list[entry.pick % entry.list.length].url); }
+        if (!entry.none) {
+          const cand = entry.list[entry.pick % entry.list.length];
+          for (const src of (cand.srcs || [cand.url])) { try { await cacheGet(word, src); found++; break; } catch (e) {} }
+        }
       } catch (e) {}
       done++; onProgress(done, found);
     }
